@@ -8,7 +8,7 @@ let instructions = input.split('\n').map(x => x.trim().toUpperCase().split(''))
 
 function solve(keypad, instructions, start) {
     let directions = {'U': [0, -1], 'L': [-1, 0], 'D': [0, 1], 'R': [1, 0]}
-    let valid = ([x, y]) => 0 <= y && y < keypad.length && keypad[y][x] != null
+    let valid = ([x, y]) => y in keypad && keypad[y][x] != null
 
     if (!valid(start)) return ''
 
