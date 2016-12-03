@@ -27,7 +27,7 @@ let normalKeypad = [
     ['7', '8', '9']
 ]
 
-console.log(solve(normalKeypad, instructions, [1, 1]))
+console.log('Part 1:\t', solve(normalKeypad, instructions, [1, 1]))
 
 let weirdKeypad = [
     [null, null, '1', null, null],
@@ -37,4 +37,4 @@ let weirdKeypad = [
     [null, null, 'D', null, null]
 ]
 
-console.log(solve(weirdKeypad, instructions, [0, 2]))
+console.log('Part 2:\t', solve(weirdKeypad, instructions, [0, 2]))
