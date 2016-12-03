@@ -9,8 +9,8 @@ let possible = t => t.every((_, i) => t.reduce((sum, x, j) => sum + sign(i, j) *
 console.log('Part 1:\t', dataRows.filter(possible).length)
 
 let newArray = n => Array.apply(null, {length: n})
-let segment = (array, n) => newArray(array.length / n).map((_, i) => array.slice(i * n, i * n + 3))
-let rows = dataRows.length
-let dataCols = segment(newArray(rows * 3).map((_, i) => dataRows[i % rows][Math.floor(i / rows)]), 3)
+let segment = (array, n) => newArray(Math.ceil(array.length / n)).map((_, i) => array.slice(i * n, (i + 1) * n))
+let [rows, cols] = [dataRows.length, dataRows[0].length]
+let dataCols = segment(newArray(rows * cols).map((_, i) => dataRows[i % rows][Math.floor(i / rows)]), 3)
 
 console.log('Part 2:\t', dataCols.filter(possible).length)
