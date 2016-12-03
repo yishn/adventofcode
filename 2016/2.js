@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input2.txt', 'utf8')
+let input = fs.readFileSync('./input2.txt', 'utf8').trim()
 let instructions = input.split('\n').map(x => x.trim().toUpperCase().split(''))
 
 function solve(keypad, instructions, start) {
