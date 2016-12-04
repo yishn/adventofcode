@@ -2,6 +2,7 @@ const fs = require('fs')
 
 let input = fs.readFileSync('./input1.txt', 'utf8').trim()
 let instructions = input.split(', ').map(x => [x[0], +x.slice(1)])
+
 let turn = ([x, y], lr) => lr.toUpperCase() == 'L' ? [-y, x] : [y, -x]
 let distance = ([x, y]) => Math.abs(x) + Math.abs(y)
 let range = n => Array.apply(null, {length: n}).map((_, i) => i + 1)

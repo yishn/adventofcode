@@ -1,7 +1,7 @@
 const fs = require('fs')
 
 let input = fs.readFileSync('./input4.txt', 'utf8').trim()
-let data = input.split('\n')
+let rooms = input.split('\n')
     .map(x => x.trim().slice(0, -1).split(/-|\[/))
     .map(x => [x.slice(0, -2).join('-'), ...x.slice(-2).map(y => isNaN(y) ? y : +y)])
 
@@ -10,7 +10,7 @@ let compare = hist => (v, w) => hist[w] != hist[v] ? hist[w] - hist[v] : v < w ?
 let checksum = hist => Object.keys(hist).sort(compare(hist)).slice(0, 5).join('')
 let real = ([str, , check]) => checksum(histogram(str)) == check
 let sum = array => array.reduce((sum, x) => sum + x)
-let realRooms = data.filter(real)
+let realRooms = rooms.filter(real)
 
 console.log('Part 1:\t', sum(realRooms.map(([, x]) => x)))
 

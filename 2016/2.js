@@ -5,10 +5,10 @@ let instructions = input.split('\n').map(x => x.trim().toUpperCase().split(''))
 
 const directions = {'U': [0, -1], 'L': [-1, 0], 'D': [0, 1], 'R': [1, 0]}
 
-let valid = (kp, [x, y]) => y in kp && kp[y][x] != null
 let add = (a, b) => a.map((x, i) => x + b[i])
+let valid = (kp, [x, y]) => y in kp && kp[y][x] != null
 let goDirection = (kp, p, uldr) => valid(kp, add(p, directions[uldr])) ? add(p, directions[uldr]) : p
-let followChunk = (kp, s, chunk) => chunk.reduce((...pd) => goDirection(kp, ...pd), s)
+let followChunk = (kp, s, chunk) => chunk.reduce((p, uldr) => goDirection(kp, p, uldr), s)
 let followInstr = (kp, s, instr) => instr.reduce((acc, chunk) => [...acc, followChunk(kp, acc.slice(-1)[0], chunk)], [s])
 let getCode = (kp, positions) => positions.map(([x, y]) => kp[y][x]).join('')
 let solve = (kp, s, instr) => getCode(kp, followInstr(kp, s, instr).slice(1))
