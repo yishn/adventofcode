@@ -2,11 +2,11 @@ const fs = require('fs')
 
 let input = fs.readFileSync('./input4.txt', 'utf8').trim()
 let rooms = input.split('\n')
-    .map(x => x.trim().slice(0, -1).split(/-|\[/))
-    .map(x => [x.slice(0, -2).join('-'), ...x.slice(-2).map(y => isNaN(y) ? y : +y)])
+    .map(x => x.match(/([a-z-]+)-(\d+)\[([a-z]+)\]/))
+    .map(([, str, id, check]) => [str, +id, check])
 
-let histogram = str => str.replace(/-/g, '').split('').reduce((hist, v) => (hist[v] = hist[v] ? hist[v] + 1 : 1, hist), {})
-let compare = hist => (v, w) => hist[w] != hist[v] ? hist[w] - hist[v] : v < w ? -1 : +(v != w)
+let histogram = str => str.replace(/-/g, '').split('').reduce((hist, v) => (hist[v] = (hist[v] | 0) + 1, hist), {})
+let compare = hist => (v, w) => hist[w] - hist[v] || (v < w ? -1 : +(v != w))
 let checksum = hist => Object.keys(hist).sort(compare(hist)).slice(0, 5).join('')
 let real = ([str, , check]) => checksum(histogram(str)) == check
 let sum = array => array.reduce((sum, x) => sum + x)
