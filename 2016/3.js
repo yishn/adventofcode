@@ -10,7 +10,7 @@ console.log('Part 1:\t', dataRows.filter(possible).length)
 
 let newArray = n => Array.apply(null, {length: n})
 let segment = (array, n) => newArray(Math.ceil(array.length / n)).map((_, i) => array.slice(i * n, (i + 1) * n))
-let [rows, cols] = [dataRows.length, dataRows[0].length]
-let dataCols = segment(newArray(rows * cols).map((_, i) => dataRows[i % rows][Math.floor(i / rows)]), 3)
+let flatten = array => array.reduce ? array.reduce((acc, x) => acc.concat(flatten(x)), []) : [array]
+let dataCols = segment(flatten(dataRows[0].map((_, i) => dataRows.map(x => x[i]))), 3)
 
 console.log('Part 2:\t', dataCols.filter(possible).length)
