@@ -17,7 +17,7 @@ console.log('Part 1:\t', sum(realRooms.map(([, x]) => x)))
 const alpha = 'abcdefghijklmnopqrstuvwxyz'
 
 let shiftAlpha = n => alpha.slice(n % alpha.length) + alpha.slice(0, n % alpha.length)
-let shift = (n, str) => str.split('').map(v => v == '-' ? ' ' : shiftAlpha(n)[alpha.indexOf(v)]).join('')
-let decrypt = rooms => rooms.map(([str, id]) => [shift(id, str), id])
+let shift = (newAlpha, str) => str.split('').map(v => v == '-' ? ' ' : newAlpha[alpha.indexOf(v)]).join('')
+let decrypt = rooms => rooms.map(([str, id]) => [shift(shiftAlpha(id), str), id])
 
 console.log('Part 2:\t', decrypt(realRooms).find(([str]) => str[0] == 'n'))
