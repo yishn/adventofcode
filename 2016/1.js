@@ -5,7 +5,7 @@ let instructions = input.split(', ').map(x => [x[0], +x.slice(1)])
 
 let turn = ([x, y], lr) => lr.toUpperCase() == 'L' ? [-y, x] : [y, -x]
 let distance = ([x, y]) => Math.abs(x) + Math.abs(y)
-let range = n => Array.apply(null, {length: n}).map((_, i) => i + 1)
+let range = n => [...Array(n)].map((_, i) => i + 1)
 
 let [end, _, __, collisions] = instructions.reduce(([position, direction, ...vc], [lr, steps]) => {
     let newDirection = turn(direction, lr)

@@ -8,8 +8,7 @@ let possible = t => t.every((_, i) => t.reduce((sum, x, j) => sum + sign(i, j) *
 
 console.log('Part 1:\t', dataRows.filter(possible).length)
 
-let newArray = n => Array.apply(null, {length: n})
-let segment = (array, n) => newArray(Math.ceil(array.length / n)).map((_, i) => array.slice(i * n, (i + 1) * n))
+let segment = (array, n) => [...Array(Math.ceil(array.length / n))].map((_, i) => array.slice(i * n, (i + 1) * n))
 let flatten = array => array.reduce ? array.reduce((acc, x) => acc.concat(flatten(x)), []) : [array]
 let dataCols = segment(flatten(dataRows[0].map((_, i) => dataRows.map(x => x[i]))), 3)
 

@@ -6,8 +6,6 @@ let instructions = input.split('\n')
     .map(([, type, , , x, , y]) => [type, +x, +y])
 
 let printScreen = screen => console.log(screen.map(row => row.map(v => v ? '#' : '.').join('')).join('\n'))
-let newArray = length => Array.apply(null, {length})
-
 let shiftArray = (a, s) => [...a.slice(-s % a.length), ...a.slice(0, -s % a.length)]
 let countOn = screen => !isNaN(screen) ? +screen : screen.reduce((sum, x) => sum + countOn(x), 0)
 

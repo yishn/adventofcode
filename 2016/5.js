@@ -9,7 +9,7 @@ let md5 = str => crypto.createHash('md5').update(str).digest('hex')
 let printCode = code => process.stdout.write('\r' + code.map(x => x || randomDigit()).join(''))
 
 function solve(length, predicate, update) {
-    let code = Array.apply(null, {length})
+    let code = Array(length).fill(null)
     let index = 0
 
     printCode(code)
