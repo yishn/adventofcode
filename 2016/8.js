@@ -13,16 +13,12 @@ let countOn = screen => !isNaN(screen) ? +screen : screen.reduce((sum, x) => sum
 
 let rotateRow = (screen, y, s) => {
     screen[y] = shiftArray(screen[y], s)
-
-    return screen
 }
 
 let rotateColumn = (screen, x, s) => {
     let column = screen.map(row => row[x])
     let shifted = shiftArray(column, s)
     screen.forEach((row, i) => row[x] = shifted[i])
-
-    return screen
 }
 
 let drawRect = (screen, x, y) => {
@@ -31,20 +27,22 @@ let drawRect = (screen, x, y) => {
             screen[j][i] = true
         }
     }
-
-    return screen
 }
 
 function getScreen(instructions, width, height) {
-    return instructions.reduce((screen, [type, x, y]) => {
+    let screen = [...Array(height)].map(_ => Array(width).fill(false))
+
+    instructions.forEach(([type, x, y]) => {
         let dict = {
             'rect': drawRect,
             'rotate column': rotateColumn,
             'rotate row': rotateRow
         }
 
-        return dict[type](screen, x, y)
-    }, newArray(height).map(x => newArray(width).map(y => false)))
+        dict[type](screen, x, y)
+    })
+
+    return screen
 }
 
 let screen = getScreen(instructions, 50, 6)
