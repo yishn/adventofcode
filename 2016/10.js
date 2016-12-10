@@ -22,32 +22,31 @@ function parseInput(input) {
     return [initialState, instructions]
 }
 
-function* step(state, instructions) {
+function step(state, instructions) {
     let readyIds = Object.keys(state).filter(readyBot(state))
-    if (readyIds.length == 0) return
+    if (readyIds.length == 0) return false
 
     for (let id of readyIds) {
         let [low, high] = instructions[id]
         let [x, y] = state[id]
 
-        state[id] = []
+        delete state[id]
         state[low] = [...(state[low] || []), Math.min(x, y)]
         state[high] = [...(state[high] || []), Math.max(x, y)]
     }
 
-    yield state
-    yield* step(state, instructions)
+    return true
 }
 
 let [state, instructions] = parseInput(input)
 let compare17with61 = state => id => Math.max(...state[id]) == 61 && Math.min(...state[id]) == 17
 let rightBot = state => id => readyBot(state)(id) && compare17with61(state)(id)
 
-for (state of step(state, instructions)) {
+while (step(state, instructions)) {
     let id = Object.keys(state).find(rightBot(state))
     if (id) console.log('Part 1:\t' + id)
 }
 
-let product = ['o0', 'o1', 'o2'].map(x => state[x]).reduce((p, x) => p * x)
+let product = ['o0', 'o1', 'o2'].map(x => state[x][0]).reduce((p, x) => p * x)
 
 console.log('Part 2:\t' + product)
