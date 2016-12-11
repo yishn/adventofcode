@@ -25,9 +25,8 @@ function isValid([floors, elevator]) {
     return 0 <= elevator && elevator < floors.length && floors.every(floor => {
         let generators = floor.filter(([, type]) => type == 'generator')
 
-        return floor.every(([el, type]) => type == 'generator'
-            || generators.length == 0
-            || generators.some(([x, ]) => x == el))
+        return generators.length == 0
+            || floor.every(([el, type]) => type == 'generator' || generators.some(([x, ]) => x == el))
     })
 }
 
@@ -50,10 +49,12 @@ function* listSteps(state) {
 
     for (let n = 1; n <= 2; n++) {
         for (let objects of powerSet(floors[elevator], n)) {
-            if (objects.length == 0)
-                continue
-            if (objects.length == 2 && objects[0][0] != objects[1][0] && objects[0][1] != objects[1][1])
-                continue
+            if (objects.length == 0) continue
+
+            if (objects.length == 2) {
+                let [[a, b], [c, d]] = objects
+                if (a != c && b != d) continue
+            }
 
             for (let newElevator = elevator - 1; newElevator <= elevator + 1; newElevator += 2) {
                 if (newElevator < 0 || newElevator >= floors.length)
@@ -62,14 +63,12 @@ function* listSteps(state) {
                     continue
 
                 let newState = copy(state)
-                let newFloors = newState[0]
-
+                let [newFloors, ] = newState
                 newState[1] = newElevator
 
                 for (let [el, type] of objects) {
                     let i = newFloors[elevator].findIndex(([x, y]) => x == el && y == type)
                     newFloors[newElevator].push(...newFloors[elevator].splice(i, 1))
-                    newFloors[elevator].sort()
                 }
 
                 newFloors[newElevator].sort()
@@ -138,7 +137,7 @@ function bfs(state) {
 let state = parse(input)
 let path = bfs(state)
 
-console.log('Part 1:\t' + (path.length - 1)) // ~3 sec
+console.log('Part 1:\t' + (path.length - 1)) // ~2 sec
 
 state[0][0].push(
     ['elerium', 'generator'],
@@ -149,4 +148,4 @@ state[0][0].push(
 
 path = bfs(state)
 
-console.log('Part 2:\t' + (path.length - 1)) // ~15 sec
+console.log('Part 2:\t' + (path.length - 1)) // ~9 sec
