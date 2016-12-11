@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input8.txt', 'utf8').trim()
+let input = fs.readFileSync('./input08.txt', 'utf8').trim()
 let instructions = input.split('\n')
     .map(x => x.match(/(rect|rotate (row|column)) ([xy]=)?(\d+)( by |x)(\d+)/))
     .map(([, type, , , x, , y]) => [type, +x, +y])

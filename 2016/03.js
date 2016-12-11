@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input3.txt', 'utf8').trim()
+let input = fs.readFileSync('./input03.txt', 'utf8').trim()
 let dataRows = input.split('\n').map(x => x.trim().split(/\s+/).map(y => +y))
 
 let sign = (i, j) => i == j ? -1 : 1

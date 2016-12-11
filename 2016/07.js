@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input7.txt', 'utf8').trim()
+let input = fs.readFileSync('./input07.txt', 'utf8').trim()
 let data = input.split('\n').map(x => x.trim().split(/[\[\]]/))
 
 let hasABBA = str => str.split('').some((x, i) => x != str[i + 1]

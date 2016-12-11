@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input9.txt', 'utf8').trim()
+let input = fs.readFileSync('./input09.txt', 'utf8').trim()
 
 function count1(str) {
     let i = str.indexOf('(')

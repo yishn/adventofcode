@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input2.txt', 'utf8').trim()
+let input = fs.readFileSync('./input02.txt', 'utf8').trim()
 let instructions = input.split('\n').map(x => x.trim().toUpperCase().split(''))
 
 const directions = {'U': [0, -1], 'L': [-1, 0], 'D': [0, 1], 'R': [1, 0]}

@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let input = fs.readFileSync('./input4.txt', 'utf8').trim()
+let input = fs.readFileSync('./input04.txt', 'utf8').trim()
 let rooms = input.split('\n')
     .map(x => x.match(/([a-z-]+)-(\d+)\[([a-z]+)\]/))
     .map(([, str, id, check]) => [str, +id, check])
