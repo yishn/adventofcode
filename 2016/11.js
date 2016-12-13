@@ -14,11 +14,15 @@ function parse(str) {
 }
 
 function copy([floors, elevator]) {
-    return [floors.map(floor => floor.slice(0)), elevator]
+    return [floors.map(floor => [...floor]), elevator]
 }
 
-function isEndState([floors, ]) {
-    return floors.slice(0, -1).every(floor => floor.length == 0)
+function getEndState([floors, ]) {
+    let objects = floors.reduce((objects, x) => [...objects, ...x])
+    let newFloors = [...Array(floors.length)].map(_ => [])
+    newFloors[3] = objects
+
+    return [newFloors, 3]
 }
 
 function isValid([floors, elevator]) {
@@ -59,8 +63,6 @@ function* listSteps(state) {
             for (let newElevator = elevator - 1; newElevator <= elevator + 1; newElevator += 2) {
                 if (newElevator < 0 || newElevator >= floors.length)
                     continue
-                if (newElevator < elevator && floors.slice(0, elevator).every(floor => floor.length == 0))
-                    continue
 
                 let newState = copy(state)
                 let [newFloors, ] = newState
@@ -100,12 +102,13 @@ function eqClass([floors, elevator]) {
     return objects.sort().join(';') + ';' + elevator
 }
 
-function bfs(state) {
-    let queue = [state]
-    let key = eqClass(state)
-    let parents = {[key]: null}
+function doubleBfs(start, end) {
+    let queue1 = [start]
+    let parents1 = {[eqClass(start)]: null}
+    let queue2 = [end]
+    let parents2 = {[eqClass(end)]: null}
 
-    let getPath = function(end) {
+    let getPath = function(parents, end) {
         let path = [end]
         let key = eqClass(end)
 
@@ -114,20 +117,29 @@ function bfs(state) {
             key = eqClass(parents[key])
         }
 
-        return path.reverse()
+        return path
     }
 
-    while (queue.length > 0) {
-        let current = queue.shift()
+    while (queue1.length > 0 && queue2.length > 0) {
+        for (let [queue, parents] of [[queue1, parents1], [queue2, parents2]]) {
+            let otherParents = parents == parents1 ? parents2 : parents1
+            let current = queue.shift()
 
-        if (isEndState(current)) return getPath(current)
+            if (eqClass(current) in otherParents) {
+                let path = getPath(parents1, current).reverse()
+                let end = getPath(parents2, current)
+                end.shift()
+                path.push(...end)
+                return path
+            }
 
-        for (let neighbor of listSteps(current)) {
-            let key = eqClass(neighbor)
-            if (key in parents) continue
-            parents[key] = current
+            for (let neighbor of listSteps(current)) {
+                let key = eqClass(neighbor)
+                if (key in parents) continue
+                parents[key] = current
 
-            queue.push(neighbor)
+                queue.push(neighbor)
+            }
         }
     }
 
@@ -135,7 +147,7 @@ function bfs(state) {
 }
 
 let state = parse(input)
-let path = bfs(state)
+let path = doubleBfs(state, getEndState(state))
 
 console.log('Part 1:\t' + (path.length - 1)) // ~2 sec
 
@@ -146,6 +158,6 @@ state[0][0].push(
     ['dilithium', 'microchip']
 )
 
-path = bfs(state)
+path = doubleBfs(state, getEndState(state))
 
-console.log('Part 2:\t' + (path.length - 1)) // ~9 sec
+console.log('Part 2:\t' + (path.length - 1)) // ~7 sec
