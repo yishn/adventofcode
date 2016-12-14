@@ -23,5 +23,5 @@ let [end, _, __, collisions] = instructions.reduce(([position, direction, ...vc]
 
 let bunny = collisions[0]
 
-console.log('End point:\t', end, distance(end))
-console.log('Bunny HQ:\t', bunny, distance(bunny))
+console.log('Part 1:\t', end, distance(end))
+console.log('Part 2:\t', bunny, distance(bunny))
