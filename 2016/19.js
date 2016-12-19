@@ -56,29 +56,22 @@ function acrossElf(index) {
 
 function playGame2() {
     let i = 0
+    let j = acrossElf(i)
 
     printProgress(0)
 
     while (participants > 1) {
-        let across = acrossElf(i)
-        let j = across
+        if (participants % 100000 == 0)
+            printProgress(1 - participants / state.length)
 
-        let counter = 0
-        let limit = participants / 2
+        state[j] = false
+        participants--
 
-        while (++counter <= limit) {
-            if (participants % 100000 == 0)
-                printProgress(1 - participants / state.length)
+        i = leftNeighborElf(i)
+        j = leftNeighborElf(j)
 
-            state[j] = false
-            participants--
-
-            i = leftNeighborElf(i)
+        if (participants % 2 == 0)
             j = leftNeighborElf(j)
-
-            if (participants % 2 == 0)
-                j = leftNeighborElf(j)
-        }
     }
 
     printProgress(1)
