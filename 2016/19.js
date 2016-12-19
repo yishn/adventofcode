@@ -25,10 +25,8 @@ function playGame1() {
     printProgress(0)
 
     while (participants > 1) {
-        if (participants % 100000 == 0) {
-            let percent = 1 - participants / state.length
-            printProgress(percent)
-        }
+        if (participants % 100000 == 0)
+            printProgress(1 - participants / state.length)
 
         state[leftNeighborElf(i)] = false
         participants--
@@ -46,10 +44,10 @@ state = Array(input).fill(1)
 participants = state.length
 
 function acrossElf(index) {
-    let skip = participants / 2
+    let skip = Math.floor(participants / 2)
     let i = index
 
-    while (skip-- >= 1) {
+    while (skip-- > 0) {
         i = leftNeighborElf(i)
     }
 
@@ -62,32 +60,24 @@ function playGame2() {
     printProgress(0)
 
     while (participants > 1) {
-        let index = i
         let across = acrossElf(i)
         let j = across
 
-        let counter = 1
+        let counter = 0
         let limit = participants / 2
 
-        while (true) {
-            if (participants % 100000 == 0) {
-                let percent = 1 - participants / state.length
-                printProgress(percent)
-            }
+        while (++counter <= limit) {
+            if (participants % 100000 == 0)
+                printProgress(1 - participants / state.length)
 
             state[j] = false
-
-            i = leftNeighborElf(i)
-
-            if (participants % 2 == 1) {
-                j = leftNeighborElf(leftNeighborElf(j))
-            } else {
-                j = leftNeighborElf(j)
-            }
-
             participants--
 
-            if (counter++ >= limit) break
+            i = leftNeighborElf(i)
+            j = leftNeighborElf(j)
+
+            if (participants % 2 == 0)
+                j = leftNeighborElf(j)
         }
     }
 
