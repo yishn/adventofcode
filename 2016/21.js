@@ -18,77 +18,31 @@ let instructions = input.split('\n').map(line => {
 })
 
 let rotate = {
-    'left': (arr, n) => [...arr.slice(n % arr.length), ...arr.slice(0, n % arr.length)],
-    'right': (arr, n) => rotate.left(arr, -n)
+       left: (arr, n) => (n = n % arr.length, [...arr.slice(n), ...arr.slice(0, n)]),
+      right: (arr, n) => rotate.left(arr, -n)
 }
 
-function scramble(str) {
-    str = [...str]
+let doInstruction = (str, [type, a, b]) => ({
+       move: () => (str = [...str], [a] = str.splice(a, 1), [...str.slice(0, b), a, ...str.slice(b)]),
+    reverse: () => [...str.slice(0, a), ...str.slice(a, b + 1).reverse(), ...str.slice(b + 1)],
+       swap: () => !isNaN(a) ? (str = [...str], [str[a], str[b]] = [str[b], str[a]], str)
+                   : str.map(x => x == a ? b : x == b ? a : x),
+     rotate: () => b != null ? rotate[a](str, b)
+                   : (b = str.indexOf(a), rotate.right(str, +(b >= 4) + 1 + b))
+})[type]()
 
-    for (let [type, a, b] of instructions) {
-        if (type == 'move') {
-            let [x] = str.splice(a, 1)
-            str.splice(b, 0, x)
-        } else if (type == 'reverse') {
-            let xs = str.splice(a, b - a + 1)
-            xs.reverse()
-            str.splice(a, 0, ...xs)
-        } else if (type == 'swap') {
-            if (!isNaN(a)) {
-                [str[a], str[b]] = [str[b], str[a]]
-            } else {
-                str = str.map(x => x == a ? b : x == b ? a : x)
-            }
-        } else if (type == 'rotate') {
-            if (b != null) {
-                str = rotate[a](str, b)
-            } else {
-                let i = str.indexOf(a)
-                str = rotate.right(str, 1 + i)
-                if (i >= 4) str = rotate.right(str, 1)
-            }
-        } else {
-            return null
-        }
-    }
-
-    return str.join('')
-}
+let scramble = str => instructions.reduce(doInstruction, [...str]).join('')
 
 console.log('Part 1:\t' + scramble('abcdefgh'))
 
-function unscramble(str) {
-    str = [...str]
+let reverseInstruction = (str, [type, a, b]) => ({
+       move: () => doInstruction(str, [type, b, a]),
+    reverse: () => doInstruction(str, [type, a, b]),
+       swap: () => doInstruction(str, [type, a, b]),
+     rotate: () => b != null ? doInstruction(str, [type, a, -b])
+                   : str.map((_, i) => rotate.left(str, +(i >= 4) + 1 + i)).find((x, i) => x.indexOf(a) == i)
+})[type]()
 
-    for (let [type, a, b] of [...instructions].reverse()) {
-        if (type == 'move') {
-            let [x] = str.splice(b, 1)
-            str.splice(a, 0, x)
-        } else if (type == 'reverse') {
-            let xs = str.splice(a, b - a + 1)
-            xs.reverse()
-            str.splice(a, 0, ...xs)
-        } else if (type == 'swap') {
-            if (!isNaN(a)) {
-                [str[a], str[b]] = [str[b], str[a]]
-            } else {
-                str = str.map(x => x == a ? b : x == b ? a : x)
-            }
-        } else if (type == 'rotate') {
-            if (b != null) {
-                str = rotate[a == 'left' ? 'right' : 'left'](str, b)
-            } else {
-                for (let i = 0; i < str.length; i++) {
-                    str = rotate.left(str, i == 4 ? 2 : 1)
-                    if (i == str.indexOf(a)) break
-                }
-            }
-        } else {
-            return null
-        }
-    }
-
-    return str.join('')
-}
+let unscramble = str => [...instructions].reverse().reduce(reverseInstruction, [...str]).join('')
 
 console.log('Part 2:\t' + unscramble('fbgdceah'))
