@@ -7,13 +7,9 @@ let includes = (...ns) => ([a, b]) => ns.every(n => a <= n && n <= b)
 let isValid = ranges => n => !ranges.some(includes(n))
 
 function searchForLowestValid(ranges) {
-    let candidates = [0]
-
-    for (let [min, max] of ranges) {
-        if (max < 4294967295) candidates.push(max + 1)
-    }
-
-    return Math.min(...candidates.filter(isValid(ranges)))
+    return [0, ...ranges.map(([, b]) => b < 4294967295 ? b + 1 : Infinity)]
+        .filter(isValid(ranges))
+        .reduce((min, x) => Math.min(min, x))
 }
 
 console.log('Part 1:\t' + searchForLowestValid(data))
@@ -22,11 +18,11 @@ let notBetween = (a, b) => ns => !includes(...ns)([a, b])
 let count = ranges => ranges.reduce((sum, [min, max]) => sum + (max - min + 1), 0)
 
 function getDisjointRanges(ranges) {
-    let result = []
+    let disjointRanges = []
 
     for (let [min, max] of ranges) {
-        let minCollisionRange = result.find(includes(min))
-        let maxCollisionRange = result.find(includes(max))
+        let minCollisionRange = disjointRanges.find(includes(min))
+        let maxCollisionRange = disjointRanges.find(includes(max))
 
         let [newMin, newMax] = [min, max]
 
@@ -38,10 +34,11 @@ function getDisjointRanges(ranges) {
             newMax = maxCollisionRange[1]
         }
 
-        result = [...result.filter(notBetween(newMin, newMax)), [newMin, newMax]]
+        disjointRanges = disjointRanges.filter(notBetween(newMin, newMax))
+        disjointRanges.push([newMin, newMax])
     }
 
-    return result
+    return disjointRanges
 }
 
 console.log('Part 2:\t' + (4294967295 - count(getDisjointRanges(data)) + 1))
