@@ -36,3 +36,61 @@ function* listViablePairs([data, ]) {
 }
 
 console.log('Part 1:\t' + [...listViablePairs([data, null])].length)
+
+let isValid = ([x, y]) => 0 <= x && x < width && 0 <= y && y < height
+let getNeighbors = ([x, y]) => [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].filter(isValid)
+let vertexDistance = (v, w) => v.map((x, i) => Math.abs(x - w[i])).reduce((sum, x) => sum + x)
+let vertexCompare = p => (v, w) => vertexDistance(p, v) - vertexDistance(p, w)
+
+let copy = ([data, pos]) => [data.map(x => x.map(y => Object.assign({}, y))), pos]
+let isEndState = ([, pos]) => equals(pos, [0, 0])
+let repr = state => JSON.stringify(state)
+
+function* listMoves([data, pos]) {
+    for (let [x, y] of [...listVertices()].sort(vertexCompare(pos))) {
+        let a = data[y][x]
+
+        for (let [nx, ny] of [...getNeighbors([x, y])].sort(vertexCompare(pos)).reverse()) {
+            let b = data[ny][nx]
+
+            if (isViablePair(a, b)) {
+                yield [a, b]
+            }
+        }
+    }
+}
+
+function bfs(start, isEnd) {
+    let queue = [[start, 0]]
+    let parents = {[repr(start)]: true}
+
+    while (queue.length > 0) {
+        let [state, distance] = queue.shift()
+
+        if (isEnd(state)) return [state, distance]
+
+        for (let [a, b] of listMoves(state)) {
+            let newState = copy(state)
+
+            if (equals(a.pos, state[1]))
+                newState[1] = b.pos
+
+            let [newA, newB] = [a, b].map(x => newState[0][x.pos[1]][x.pos[0]])
+
+            newB.available -= a.used
+            newB.used += a.used
+            newA.available += a.used
+            newA.used = 0
+
+            let key = repr(newState)
+            if (key in parents) continue
+
+            parents[key] = true
+            queue.push([newState, distance + 1])
+        }
+    }
+
+    return null
+}
+
+console.log('Part 2:\t' + bfs([data, [width - 1, 0]], isEndState))
