@@ -15,7 +15,7 @@ function run(state, instructions) {
             state[args[0]]++
         } else if (command == 'dec') {
             state[args[0]]--
-        } else if (command == 'jnz' && args[0] != 0 && state[args[0]] != 0) {
+        } else if (command == 'jnz' && args[0] != '0' && state[args[0]] != 0) {
             i += +args[1] - 1
         }
 
