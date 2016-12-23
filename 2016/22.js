@@ -26,7 +26,7 @@ function* listVertices() {
     }
 }
 
-function* listViablePairs([data, ]) {
+function* listViablePairs(data) {
     for (let [x1, y1] of listVertices()) {
         for (let [x2, y2] of listVertices()) {
             let a = data[y1][x1], b = data[y2][x2]
@@ -35,62 +35,68 @@ function* listViablePairs([data, ]) {
     }
 }
 
-console.log('Part 1:\t' + [...listViablePairs([data, null])].length)
+console.log('Part 1:\t' + [...listViablePairs(data)].length)
 
 let isValid = ([x, y]) => 0 <= x && x < width && 0 <= y && y < height
 let getNeighbors = ([x, y]) => [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].filter(isValid)
-let vertexDistance = (v, w) => v.map((x, i) => Math.abs(x - w[i])).reduce((sum, x) => sum + x)
-let vertexCompare = p => (v, w) => vertexDistance(p, v) - vertexDistance(p, w)
+let copy = data => data.map(x => x.map(y => Object.assign({}, y)))
 
-let copy = ([data, pos]) => [data.map(x => x.map(y => Object.assign({}, y))), pos]
-let isEndState = ([, pos]) => equals(pos, [0, 0])
-let repr = state => JSON.stringify(state)
+function repr(data, xpos) {
+    return data
+        .map((row, y) => row.map(({used}, x) => used == 0 ? '_' : equals([x, y], xpos) ? 'x' : '.').join(' '))
+        .join('\n') + '\n'
+}
 
-function* listMoves([data, pos]) {
-    for (let [x, y] of [...listVertices()].sort(vertexCompare(pos))) {
-        let a = data[y][x]
+function* listMoves(data, [x, y]) {
+    let b = data[y][x]
 
-        for (let [nx, ny] of [...getNeighbors([x, y])].sort(vertexCompare(pos)).reverse()) {
-            let b = data[ny][nx]
-
-            if (isViablePair(a, b)) {
-                yield [a, b]
-            }
-        }
+    for (let [nx, ny] of getNeighbors([x, y])) {
+        let a = data[ny][nx]
+        if (isViablePair(a, b)) yield [a, b]
     }
 }
 
-function bfs(start, isEnd) {
-    let queue = [[start, 0]]
-    let parents = {[repr(start)]: true}
+function move(data, p, q) {
+    let newData = copy(data)
+    let [newA, newB] = [p, q].map(x => newData[x[1]][x[0]])
+
+    newB.available -= newA.used
+    newB.used += newA.used
+    newA.available += newA.used
+    newA.used = 0
+
+    return newData
+}
+
+function bfs(start, xpos, isEnd) {
+    let queue = [[...start, 0]]
+    let parents = {[repr(start[0], xpos)]: true}
 
     while (queue.length > 0) {
-        let [state, distance] = queue.shift()
+        let [data, pos, distance] = queue.shift()
 
-        if (isEnd(state)) return [state, distance]
+        if (isEnd(data)) return [data, pos, distance]
 
-        for (let [a, b] of listMoves(state)) {
-            let newState = copy(state)
+        for (let [a, b] of listMoves(data, pos)) {
+            if (equals(a.pos, xpos)) continue
 
-            if (equals(a.pos, state[1]))
-                newState[1] = b.pos
+            let newData = move(data, a.pos, b.pos)
+            let key = repr(newData, xpos)
 
-            let [newA, newB] = [a, b].map(x => newState[0][x.pos[1]][x.pos[0]])
-
-            newB.available -= a.used
-            newB.used += a.used
-            newA.available += a.used
-            newA.used = 0
-
-            let key = repr(newState)
             if (key in parents) continue
 
             parents[key] = true
-            queue.push([newState, distance + 1])
+            queue.push([newData, a.pos, distance + 1])
         }
     }
 
     return null
 }
 
-console.log('Part 2:\t' + bfs([data, [width - 1, 0]], isEndState))
+let xpos = [width - 1, 0]
+let pos = data.map(x => x.findIndex(y => y.used == 0))
+    .reduce((p, x, y) => x >= 0 ? [x, y] : p, [-1, -1])
+
+let [, , distance] = bfs([data, pos], xpos, x => x[0][width - 2].used == 0)
+
+console.log('Part 2:\t' + (distance + 5 * (width - 2) + 1))
