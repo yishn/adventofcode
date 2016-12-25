@@ -3,6 +3,7 @@ const fs = require('fs')
 let input = fs.readFileSync('./input23.txt', 'utf8').trim()
 let instructions = () => input.split('\n').map(x => x.trim().split(' '))
 let equals = (a, b) => a.length == b.length && a.every((x, i) => x == b[i])
+let get = (x, state) => isNaN(x) ? state[x] : +x
 
 function optimize(state, instructions, i) {
     let [command, ...args] = instructions[i]
@@ -57,15 +58,15 @@ function run(state, instructions) {
         }
 
         if (command == 'cpy' && isNaN(args[1])) {
-            state[args[1]] = state[args[0]] || +args[0]
+            state[args[1]] = get(args[0], state)
         } else if (command == 'inc') {
             state[args[0]]++
         } else if (command == 'dec') {
             state[args[0]]--
         } else if (command == 'jnz' && args[0] != '0' && state[args[0]] != 0) {
-            i += (state[args[1]] || +args[1]) - 1
+            i += get(args[1], state) - 1
         } else if (command == 'tgl') {
-            let j = (state[args[0]] || +args[0]) + i
+            let j = get(args[0], state) + i
 
             if (0 <= j && j < instructions.length) {
                 let changeMap = {tgl: 'inc', dec: 'inc', inc: 'dec', jnz: 'cpy', cpy: 'jnz'}
