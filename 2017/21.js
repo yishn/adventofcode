@@ -1,0 +1,5 @@
+// Part 1
+j=M=>M.join(),c=(f,n,x)=>!n?x:f(c(f,n-1,x)),I=document.body.innerText.trim().split`\n`.map(x=>x.split` => `.map(y=>y.split`/`.map(z=>[...z]))),j(c(M=>{for(l=M.length,d=l%2?3:2,N=[...Array(l+l/d)].map(_=>Array(l+l/d).fill('.')),r=S=>S.map((r,y)=>r.map((_,x)=>S[d-1-x][y])),R=S=>[S,r(S),r(r(S)),c(r,3,S)].map(j),x=0;x<l;x+=d)for(y=0;y<l;y+=d)I.find(([N])=>[...R(S),...R(S.map((_,y)=>S[d-1-y]))].includes(j(N)),S=M.slice(y,y+d).map(r=>r.slice(x,x+d)))[1].map((r,j)=>r.map((v,i)=>N[y+y/d+j][x+x/d+i]=v));return N},5,I[62][0])).match(/#/g).length
+
+// Part 2
+j=M=>M.join(),c=(f,n,x)=>!n?x:f(c(f,n-1,x)),I=document.body.innerText.trim().split`\n`.map(x=>x.split` => `.map(y=>y.split`/`.map(z=>[...z]))),j(c(M=>{for(l=M.length,d=l%2?3:2,N=[...Array(l+l/d)].map(_=>Array(l+l/d).fill('.')),r=S=>S.map((r,y)=>r.map((_,x)=>S[d-1-x][y])),R=S=>[S,r(S),r(r(S)),c(r,3,S)].map(j),x=0;x<l;x+=d)for(y=0;y<l;y+=d)I.find(([N])=>[...R(S),...R(S.map((_,y)=>S[d-1-y]))].includes(j(N)),S=M.slice(y,y+d).map(r=>r.slice(x,x+d)))[1].map((r,j)=>r.map((v,i)=>N[y+y/d+j][x+x/d+i]=v));return N},18,I[62][0])).match(/#/g).length
