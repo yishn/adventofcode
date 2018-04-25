@@ -26,6 +26,6 @@ fn main() {
         }
     }
 
-    println!("{}", floor);
-    println!("{}", underground_index);
+    println!("Part 1: {}", floor);
+    println!("Part 2: {}", underground_index);
 }
