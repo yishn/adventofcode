@@ -84,9 +84,11 @@ fn main() {
     let instructions: Vec<Instruction> = input.lines().filter_map(parse_line).collect();
 
     let mut lit_grid = [[false; 1000]; 1000];
-    let mut brightness_grid = (0..1000).map(|_| (0..1000).map(|_| 0).collect::<Vec<_>>()).collect::<Vec<_>>();
+    let mut brightness_grid = (0..1000).map(|_| {
+        (0..1000).map(|_| 0).collect::<Vec<_>>()
+    }).collect::<Vec<_>>();
 
-    for &Instruction {action, point1, point2} in instructions.iter() {
+    for Instruction {action, point1, point2} in instructions.into_iter() {
         let rectangle = match get_rectangle(point1, point2) {
             Some(x) => x,
             None => continue
@@ -115,7 +117,7 @@ fn main() {
 
     let brightness = brightness_grid.into_iter()
         .flat_map(|x| x.into_iter())
-        .sum::<isize>();
+        .sum::<i32>();
 
     println!("Part 1: {}", lit_count);
     println!("Part 2: {}", brightness);
