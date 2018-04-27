@@ -18,7 +18,7 @@ fn main() {
         floor += match c {
             '(' => 1,
             ')' => -1,
-            _ => 0
+            _ => continue
         };
 
         if floor < 0 && underground_index < 0 {

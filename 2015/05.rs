@@ -9,7 +9,7 @@ fn get_input() -> std::io::Result<String> {
     Ok(contents)
 }
 
-fn nice_string(string: &String) -> bool {
+fn nice_string(string: &str) -> bool {
     let vowels: Vec<char> = "aeiou".chars().collect();
 
     // Contains at least three vowels
@@ -22,7 +22,7 @@ fn nice_string(string: &String) -> bool {
     && ["ab", "cd", "pq", "xy"].into_iter().all(|s| !string.contains(s))
 }
 
-fn nice_string_2(string: &String) -> bool {
+fn nice_string_2(string: &str) -> bool {
     // Contains at least one letter which repeats with one letter between them
     string.len() >= 3 && (0..string.len() - 2)
         .map(|i| (&string[i..i + 3]).chars())
@@ -36,9 +36,9 @@ fn nice_string_2(string: &String) -> bool {
 
 fn main() {
     let input = get_input().unwrap();
-    let lines: Vec<String> = input.split('\n').map(|x| x.replace("\r", "")).collect();
-    let nice_count = lines.iter().filter(|&s| nice_string(s)).count();
-    let nice_count_2 = lines.iter().filter(|&s| nice_string_2(s)).count();
+    let lines: Vec<&str> = input.lines().collect();
+    let nice_count = lines.iter().filter(|&&s| nice_string(s)).count();
+    let nice_count_2 = lines.iter().filter(|&&s| nice_string_2(s)).count();
 
     println!("Part 1: {}", nice_count);
     println!("Part 2: {}", nice_count_2);

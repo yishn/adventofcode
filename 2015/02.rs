@@ -11,7 +11,7 @@ fn get_input() -> std::io::Result<String> {
 
 fn main() {
     let input = get_input().unwrap();
-    let lines = input.split('\n').map(|x| x.replace("\r", ""));
+    let lines = input.lines();
 
     let mut area = 0;
     let mut ribbon = 0;
