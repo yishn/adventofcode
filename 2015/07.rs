@@ -32,6 +32,44 @@ struct Instruction<'a> {
     action: Action<'a>
 }
 
+struct Circuit<'a, 'b: 'a> {
+    instructions: &'a Vec<Instruction<'b>>,
+    cache: HashMap<&'b str, u16>
+}
+
+impl<'a, 'b> Circuit<'a, 'b> {
+    fn new(instructions: &'a Vec<Instruction<'b>>) -> Circuit<'a, 'b> {
+        let cache = HashMap::new();
+        Circuit {instructions, cache}
+    }
+
+    fn resolve(&mut self, value: Value<'b>) -> u16 {
+        match value {
+            Value::Num(x) => x,
+            Value::Wire(wire) => {
+                if let Some(x) = self.cache.get(wire) {
+                    return *x;
+                }
+
+                let instruction = self.instructions.iter()
+                    .find(|&i| i.wire == wire).unwrap();
+
+                let num = match instruction.action {
+                    Action::Assign(x) => self.resolve(x),
+                    Action::And(x, y) => self.resolve(x) & self.resolve(y),
+                    Action::Or(x, y) => self.resolve(x) | self.resolve(y),
+                    Action::LShift(x, y) => self.resolve(x) << y,
+                    Action::RShift(x, y) => self.resolve(x) >> y,
+                    Action::Not(x) => !self.resolve(x)
+                };
+
+                self.cache.insert(wire, num);
+                num
+            }
+        }
+    }
+}
+
 fn parse_value(string: &str) -> Value {
     match string.parse::<u16>() {
         Ok(x) => Value::Num(x),
@@ -77,68 +115,29 @@ fn parse_line(line: &str) -> Option<Instruction> {
     Some(Instruction {wire, action})
 }
 
-fn resolve<'a>(
-    instructions: &Vec<Instruction<'a>>,
-    cache: &mut HashMap<&'a str, u16>,
-    value: Value<'a>
-) -> u16 {
-    match value {
-        Value::Num(x) => x,
-        Value::Wire(wire) => {
-            if let Some(x) = cache.get(wire) {
-                return *x;
-            }
-
-            let instruction = instructions.iter()
-                .find(|&i| i.wire == wire).unwrap();
-
-            let num = match instruction.action {
-                Action::Assign(x) => {
-                    resolve(instructions, cache, x)
-                },
-                Action::And(x, y) => {
-                    resolve(instructions, cache, x)
-                    & resolve(instructions, cache, y)
-                },
-                Action::Or(x, y) => {
-                    resolve(instructions, cache, x)
-                    | resolve(instructions, cache, y)
-                },
-                Action::LShift(x, y) => {
-                    resolve(instructions, cache, x) << y
-                },
-                Action::RShift(x, y) => {
-                    resolve(instructions, cache, x) >> y
-                },
-                Action::Not(x) => {
-                    !resolve(instructions, cache, x)
-                }
-            };
-
-            cache.insert(wire, num);
-            num
-        }
-    }
-}
-
 fn main() {
     let input = get_input().unwrap();
-
     let mut instructions = input.lines().filter_map(parse_line).collect::<Vec<_>>();
-    let mut cache = HashMap::new();
-    let result = resolve(&instructions, &mut cache, Value::Wire("a"));
+    let mut result: u16;
 
-    println!("Part 1: {}", result);
+    {
+        let mut circuit = Circuit::new(&instructions);
+        result = circuit.resolve(Value::Wire("a"));
 
-    let index = instructions.iter().position(|i| i.wire == "b").unwrap();
+        println!("Part 1: {}", result);
+    }
 
-    instructions[index] = Instruction {
-        wire: "b",
-        action: Action::Assign(Value::Num(result))
-    };
-    
-    let mut cache: HashMap<&str, u16> = HashMap::new();
-    let result = resolve(&instructions, &mut cache, Value::Wire("a"));
+    {
+        let index = instructions.iter().position(|i| i.wire == "b").unwrap();
 
-    println!("Part 2: {}", result);
+        instructions[index] = Instruction {
+            wire: "b",
+            action: Action::Assign(Value::Num(result))
+        };
+
+        let mut circuit = Circuit::new(&instructions);
+        result = circuit.resolve(Value::Wire("a"));
+
+        println!("Part 2: {}", result);
+    }
 }
