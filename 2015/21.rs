@@ -41,25 +41,29 @@ fn is_winner<'a>(player: &'a Character, target: &'a Character) -> bool {
     target_turns <= player_turns
 }
 
-fn get_item_combinations<'a>(items: &'a Vec<&'a Item>) -> Vec<Vec<&'a Item>> {
-    let weapons = items.iter().filter(|x| x.category == Weapon).collect::<Vec<_>>();
-    let armors = items.iter().filter(|x| x.category == Armor).collect::<Vec<_>>();
-    let rings = items.iter().filter(|x| x.category == Ring).collect::<Vec<_>>();
+fn list_item_combinations<'a>(items: &'a Vec<&'a Item>) -> Vec<Vec<&'a Item>> {
+    let weapons = items.iter().cloned().filter(|x| x.category == Weapon).collect::<Vec<_>>();
+    let armors = items.iter().cloned().filter(|x| x.category == Armor).collect::<Vec<_>>();
+    let rings = items.iter().cloned().filter(|x| x.category == Ring).collect::<Vec<_>>();
     let mut choices = Vec::new();
 
-    for &&weapon in weapons.iter() {
+    for &weapon in weapons.iter() {
         choices.push(vec![weapon]);
 
-        for &&armor in armors.iter() {
+        for i in 0..rings.len() {
+            choices.push(vec![weapon, rings[i]]);
+            for j in i + 1..rings.len() {
+                choices.push(vec![weapon, rings[i], rings[j]]);
+            }
+        }
+
+        for &armor in armors.iter() {
             choices.push(vec![weapon, armor]);
 
             for i in 0..rings.len() {
-                choices.push(vec![weapon, *rings[i]]);
-                choices.push(vec![weapon, armor, *rings[i]]);
-
+                choices.push(vec![weapon, armor, rings[i]]);
                 for j in i + 1..rings.len() {
-                    choices.push(vec![weapon, *rings[i], *rings[j]]);
-                    choices.push(vec![weapon, armor, *rings[i], *rings[j]]);
+                    choices.push(vec![weapon, armor, rings[i], rings[j]]);
                 }
             }
         }
@@ -76,19 +80,35 @@ fn get_character(hp: i32, items: &Vec<&Item>) -> Character {
     })
 }
 
-fn get_winning_items<'a>(
+fn get_cheapest_winning_items<'a>(
     items: &'a Vec<&'a Item>,
     hp: i32,
     target: &Character
 ) -> Option<Vec<&'a Item>> {
-    get_item_combinations(items).into_iter()
+    list_item_combinations(items).into_iter()
     .filter(|combination| {
         is_winner(&get_character(hp, combination), target)
     })
     .min_by_key(|combination| {
         combination.iter()
-            .map(|item| item.cost)
-            .sum::<i32>()
+        .map(|item| item.cost)
+        .sum::<i32>()
+    })
+}
+
+fn get_costliest_losing_items<'a>(
+    items: &'a Vec<&'a Item>,
+    hp: i32,
+    target: &Character
+) -> Option<Vec<&'a Item>> {
+    list_item_combinations(items).into_iter()
+    .filter(|combination| {
+        !is_winner(&get_character(hp, combination), target)
+    })
+    .max_by_key(|combination| {
+        combination.iter()
+        .map(|item| item.cost)
+        .sum::<i32>()
     })
 }
 
@@ -200,6 +220,9 @@ fn main() {
 
     let items = items.iter().collect();
 
-    let combinations = get_winning_items(&items, 100, &boss).unwrap();
-    println!("{:#?}", combinations);
+    let combinations = get_cheapest_winning_items(&items, 100, &boss).unwrap();
+    println!("Part 1: {}", combinations.into_iter().map(|item| item.cost).sum::<i32>());
+
+    let combinations = get_costliest_losing_items(&items, 100, &boss).unwrap();
+    println!("Part 2: {}", combinations.into_iter().map(|item| item.cost).sum::<i32>());
 }
