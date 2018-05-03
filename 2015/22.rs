@@ -46,30 +46,31 @@ struct State {
     effects: Vec<Effect>
 }
 
-fn process_effects(state: &State) -> State {
-    let mut result = State {player: state.player, boss: state.boss, effects: Vec::new()};
+fn process_effects(state: &mut State) {
+    let mut effects = Vec::new();
     let mut armor = 0;
 
     for mut effect in state.effects.iter().filter(|x| x.turns > 0).cloned() {
         effect.turns -= 1;
 
         if effect.turns > 0 {
-            result.effects.push(effect);
+            effects.push(effect);
         }
 
         match effect.class {
             Shield => armor = effect.intensity,
-            Poison => result.boss.hp -= effect.intensity,
-            Recharge => result.player.mana += effect.intensity
+            Poison => state.boss.hp -= effect.intensity,
+            Recharge => state.player.mana += effect.intensity
         }
     }
 
-    result.player.armor = armor;
-    result
+    state.player.armor = armor;
+    state.effects = effects;
 }
 
-fn cast_spell(state: &State, spell: Spell) -> Option<AttackResult> {
-    let mut result = process_effects(state);
+fn cast_spell(state: &State, spell: Spell) -> AttackResult {
+    let mut result = state.clone();
+    process_effects(&mut result);
 
     // Cast spell
 
@@ -78,35 +79,35 @@ fn cast_spell(state: &State, spell: Spell) -> Option<AttackResult> {
     result.boss.hp -= spell.damage;
 
     if result.player.mana <= 0 {
-        return Some(Lose);
+        return Lose;
     }
 
     // Deal with effects
 
     if let Some(effect) = spell.effect {
         if result.effects.iter().all(|x| x.class != effect.class) {
-            result.effects.push(effect)
+            result.effects.push(effect);
         } else {
-            return None;
+            return Lose;
         }
     }
 
     // Counter attack
 
-    let mut result = process_effects(&result);
+    process_effects(&mut result);
 
     if result.boss.hp > 0 {
         let damage = cmp::max(result.boss.damage - result.player.armor, 1);
         result.player.hp = cmp::max(result.player.hp - damage, 0);
 
         if result.player.hp <= 0 {
-            return Some(Lose);
+            return Lose;
         }
     } else {
-        return Some(Win);
+        return Win;
     }
 
-    Some(Continue(result))
+    Continue(result)
 }
 
 fn list_strategies(spells: &Vec<Spell>, state: &State) -> Vec<Vec<Spell>> {
