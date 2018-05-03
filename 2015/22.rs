@@ -110,20 +110,22 @@ fn cast_spell(state: &State, spell: Spell) -> AttackResult {
     Continue(result)
 }
 
-fn list_strategies(spells: &Vec<Spell>, state: &State) -> Vec<Vec<Spell>> {
-    spells.iter().flat_map(|&spell| match cast_spell(state, spell) {
-        Some(Continue(next_state)) => {
-            list_strategies(spells, &next_state)
-            .into_iter()
-            .map(|mut strategy| {
-                strategy.push(spell);
-                strategy
+fn cheapest_strategy(spells: &Vec<Spell>, state: &State) -> Option<Vec<Spell>> {
+    spells.iter().filter_map(|&spell| match cast_spell(state, spell) {
+        Continue(next_state) => {
+            Some(match cheapest_strategy(spells, &next_state) {
+                Some(mut strategy) => {
+                    strategy.push(spell);
+                    strategy
+                },
+                None => return None
             })
-            .collect()
         },
-        Some(Win) => vec![vec![spell]],
-        _ => vec![]
-    }).collect()
+        Win => Some(vec![spell]),
+        Lose => None
+    }).min_by_key(|strategy| {
+        strategy.into_iter().map(|spell| spell.cost).sum::<i32>()
+    })
 }
 
 fn main() {
@@ -175,7 +177,9 @@ fn main() {
     };
 
     let start = State {player, boss, effects: Vec::new()};
-    let strategies = list_strategies(&spells, &start);
+    let mut strategy = cheapest_strategy(&spells, &start).unwrap();
 
-    println!("{:?}", strategies.len());
+    strategy.reverse();
+
+    println!("{:#?}", strategy);
 }
