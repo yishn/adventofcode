@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use AttackResult::*;
 use EffectClass::*;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Character {
     hp: i32,
     mana: i32,
@@ -18,14 +18,14 @@ enum AttackResult {
     Continue(State)
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum EffectClass {
     Shield,
     Poison,
     Recharge
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Effect {
     turns: i32,
     intensity: i32,
@@ -40,7 +40,7 @@ struct Spell {
     effect: Option<Effect>
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 struct State {
     player: Character,
     boss: Character,
@@ -69,8 +69,17 @@ fn process_effects(state: &mut State) {
     state.effects = effects;
 }
 
-fn cast_spell(state: &State, spell: Spell) -> AttackResult {
+fn cast_spell(state: &State, spell: Spell, hard: bool) -> AttackResult {
     let mut result = state.clone();
+
+    if hard {
+        result.player.hp -= 1;
+
+        if result.player.hp <= 0 {
+            return Lose;
+        }
+    }
+
     process_effects(&mut result);
 
     // Cast spell
@@ -111,7 +120,7 @@ fn cast_spell(state: &State, spell: Spell) -> AttackResult {
     Continue(result)
 }
 
-fn cheapest_strategy(spells: &Vec<Spell>, start: &State) -> Option<Vec<Spell>> {
+fn cheapest_strategy(spells: &Vec<Spell>, start: &State, hard: bool) -> Option<Vec<Spell>> {
     let mut queue: VecDeque<(Vec<Spell>, State)> = VecDeque::new();
     let mut min = None;
 
@@ -122,24 +131,25 @@ fn cheapest_strategy(spells: &Vec<Spell>, start: &State) -> Option<Vec<Spell>> {
         let cost = substrategy.iter().map(|spell| spell.cost).sum::<i32>();
 
         for &spell in spells {
-            match cast_spell(&state, spell) {
-                Lose => continue,
-                attack_result => {
-                    if let Some((min_cost, _)) = min {
-                        if cost + spell.cost >= min_cost {
-                            continue;
-                        }
-                    }
+            let attack_result = cast_spell(&state, spell, hard);
 
-                    let mut strategy = substrategy.clone();
-                    strategy.push(spell);
+            if let Lose = attack_result {
+                continue;
+            }
 
-                    if let Continue(next_state) = attack_result {
-                        queue.push_back((strategy, next_state));
-                    } else {
-                        min = Some((cost + spell.cost, strategy));
-                    }
+            if let Some((min_cost, _)) = min {
+                if cost + spell.cost >= min_cost {
+                    continue;
                 }
+            }
+
+            let mut strategy = substrategy.clone();
+            strategy.push(spell);
+
+            if let Continue(next_state) = attack_result {
+                queue.push_back((strategy, next_state));
+            } else {
+                min = Some((cost + spell.cost, strategy));
             }
         }
     }
@@ -202,8 +212,11 @@ fn main() {
     };
 
     let start = State {player, boss, effects: Vec::new()};
-    let strategy = cheapest_strategy(&spells, &start).unwrap();
-    let cost = strategy.iter().map(|spell| spell.cost).sum::<i32>();
+    let cost = |strategy: &Vec<Spell>| strategy.iter().map(|spell| spell.cost).sum::<i32>();
 
-    println!("Part 1: {}", cost);
+    let strategy = cheapest_strategy(&spells, &start, false).unwrap();
+    println!("Part 1: {}", cost(&strategy));
+
+    let strategy = cheapest_strategy(&spells, &start, true).unwrap();
+    println!("Part 2: {}", cost(&strategy));
 }
