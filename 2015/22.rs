@@ -1,8 +1,9 @@
 use std::cmp;
+use std::collections::VecDeque;
 use AttackResult::*;
 use EffectClass::*;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct Character {
     hp: i32,
     mana: i32,
@@ -17,14 +18,14 @@ enum AttackResult {
     Continue(State)
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum EffectClass {
     Shield,
     Poison,
     Recharge
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct Effect {
     turns: i32,
     intensity: i32,
@@ -39,7 +40,7 @@ struct Spell {
     effect: Option<Effect>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct State {
     player: Character,
     boss: Character,
@@ -110,22 +111,46 @@ fn cast_spell(state: &State, spell: Spell) -> AttackResult {
     Continue(result)
 }
 
-fn cheapest_strategy(spells: &Vec<Spell>, state: &State) -> Option<Vec<Spell>> {
-    spells.iter().filter_map(|&spell| match cast_spell(state, spell) {
-        Continue(next_state) => {
-            Some(match cheapest_strategy(spells, &next_state) {
-                Some(mut strategy) => {
+fn cheapest_strategy(spells: &Vec<Spell>, start: &State) -> Option<Vec<Spell>> {
+    let mut queue: VecDeque<(Vec<Spell>, State)> = VecDeque::new();
+    let mut min = None;
+
+    queue.push_back((vec![], start.clone()));
+
+    while queue.len() > 0 {
+        let (substrategy, state) = queue.pop_front().unwrap();
+        let cost = substrategy.iter().map(|spell| spell.cost).sum::<i32>();
+
+        for &spell in spells {
+            match cast_spell(&state, spell) {
+                Lose => continue,
+                attack_result => {
+                    if let Some((min_cost, _)) = min {
+                        if cost + spell.cost >= min_cost {
+                            continue;
+                        }
+                    }
+
+                    let mut strategy = substrategy.clone();
                     strategy.push(spell);
-                    strategy
-                },
-                None => return None
-            })
-        },
-        Win => Some(vec![spell]),
-        Lose => None
-    }).min_by_key(|strategy| {
-        strategy.into_iter().map(|spell| spell.cost).sum::<i32>()
-    })
+
+                    if let Continue(next_state) = attack_result {
+                        queue.push_back((strategy, next_state));
+                    } else {
+                        min = Some((cost + spell.cost, strategy));
+                    }
+                }
+            }
+        }
+    }
+
+    match min {
+        None => None,
+        Some((_, mut strategy)) => {
+            strategy.reverse();
+            Some(strategy)
+        }
+    }
 }
 
 fn main() {
@@ -177,9 +202,8 @@ fn main() {
     };
 
     let start = State {player, boss, effects: Vec::new()};
-    let mut strategy = cheapest_strategy(&spells, &start).unwrap();
+    let strategy = cheapest_strategy(&spells, &start).unwrap();
+    let cost = strategy.iter().map(|spell| spell.cost).sum::<i32>();
 
-    strategy.reverse();
-
-    println!("{:#?}", strategy);
+    println!("Part 1: {}", cost);
 }
