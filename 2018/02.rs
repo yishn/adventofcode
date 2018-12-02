@@ -50,7 +50,7 @@ fn diff_id(id1: &str, id2: &str) -> usize {
 
 fn find_correct_ids(ids: &Vec<String>) -> Option<(&str, &str)> {
     for (i, id1) in ids.iter().enumerate() {
-        for id2 in ids.iter().skip(i + 1) {
+        for id2 in ids[i + 1..].iter() {
             let diff = diff_id(id1, id2);
 
             if diff == 1 {
