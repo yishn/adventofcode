@@ -48,7 +48,7 @@ fn diff_id(id1: &str, id2: &str) -> usize {
     .count()
 }
 
-fn find_correct_ids<'a>(ids: &'a Vec<String>) -> Option<(&'a str, &'a str)> {
+fn find_correct_ids(ids: &Vec<String>) -> Option<(&str, &str)> {
     for (i, id1) in ids.iter().enumerate() {
         for id2 in ids.iter().skip(i + 1) {
             let diff = diff_id(id1, id2);
