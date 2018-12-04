@@ -39,7 +39,7 @@ struct LogEntry {
     event: Event
 }
 
-type AsleepPlan = HashMap<usize, Vec<DateTime>>;
+type AsleepPlan = HashMap<usize, HashMap<usize, Vec<DateTime>>>;
 
 fn create_log(input: &str) -> Vec<LogEntry> {
     let mut result: Vec<LogEntry> = input.lines()
@@ -99,12 +99,18 @@ fn create_plan(log: &Vec<LogEntry>) -> AsleepPlan {
                 id = x;
 
                 if !plan.contains_key(&id) {
-                    plan.insert(id, vec![]);
+                    plan.insert(id, HashMap::new());
                 }
             },
             Event::WakeUp if asleep => {
-                if let Some(asleep_vec) = plan.get_mut(&id) {
+                if let Some(asleep_map) = plan.get_mut(&id) {
                     for i in last_time.minute..time.minute {
+                        if !asleep_map.contains_key(&i) {
+                            asleep_map.insert(i, vec![]);
+                        }
+
+                        let asleep_vec = asleep_map.get_mut(&i).unwrap();
+
                         asleep_vec.push(DateTime {
                             year: time.year,
                             month: time.month,
@@ -132,38 +138,30 @@ fn main() {
     let data = create_log(&get_input().unwrap());
     let plan = create_plan(&data);
 
-    let vec = vec![];
-    let (candidate_id, asleep_vec) = plan.iter()
-        .fold(None, |acc, (&id, asleep_vec)| match acc {
-            None => Some((id, asleep_vec)),
-            Some((_, x)) => if x.len() > asleep_vec.len() {
-                acc
-            } else {
-                Some((id, asleep_vec))
-            }
-        })
-        .unwrap_or((0, &vec));
+    let empty_map = HashMap::new();
+    let empty_vec = Vec::new();
 
-    let candidate_minute = asleep_vec.iter()
-        .fold(HashMap::new(), |mut acc, &time| {
-            let value = match acc.get(&time.minute) {
-                Some(&x) => x,
-                _ => 0
-            };
+    let (&candidate_id, asleep_map) = plan.iter()
+        .max_by_key(|&(_, asleep_map)| asleep_map.values().flatten().count())
+        .unwrap_or((&0, &empty_map));
 
-            acc.insert(time.minute, value + 1);
-            acc
-        })
-        .iter()
-        .fold(None, |acc, (&minute, &n)| match acc {
-            None => Some((minute, n)),
-            Some((_, m)) => if m > n {
-                acc
-            } else {
-                Some((minute, n))
-            }
-        })
-        .unwrap_or((0, 0)).0;
+    let (&candidate_minute, _) = asleep_map.iter()
+        .max_by_key(|&(_, asleep_vec)| asleep_vec.len())
+        .unwrap_or((&0, &empty_vec));
 
     println!("Part 1: {}", candidate_id * candidate_minute);
+
+    let (candidate_id, candidate_minute, _) = plan.iter()
+        .map(|(&id, asleep_map)| (
+            id,
+            asleep_map.iter()
+                .map(|(&id, asleep_vec)| (id, asleep_vec.len()))
+                .max_by_key(|&(_, value)| value)
+                .unwrap_or((0, 0))
+        ))
+        .map(|(x, (y, z))| (x, y, z))
+        .max_by_key(|&(_, _, value)| value)
+        .unwrap_or((0, 0, 0));
+
+    println!("Part 2: {}", candidate_id * candidate_minute);
 }
