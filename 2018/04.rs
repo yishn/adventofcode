@@ -11,7 +11,7 @@ fn get_input() -> std::io::Result<String> {
     Ok(contents)
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 struct DateTime {
     year: usize,
     month: usize,
@@ -26,7 +26,7 @@ impl fmt::Debug for DateTime {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
 enum Event {
     Begin(usize),
     Sleep,
@@ -138,30 +138,30 @@ fn main() {
     let data = create_log(&get_input().unwrap());
     let plan = create_plan(&data);
 
-    let empty_map = HashMap::new();
-    let empty_vec = Vec::new();
-
-    let (&candidate_id, asleep_map) = plan.iter()
+    let (candidate_id, candidate_minute) = plan.iter()
         .max_by_key(|&(_, asleep_map)| asleep_map.values().flatten().count())
-        .unwrap_or((&0, &empty_map));
-
-    let (&candidate_minute, _) = asleep_map.iter()
-        .max_by_key(|&(_, asleep_vec)| asleep_vec.len())
-        .unwrap_or((&0, &empty_vec));
-
-    println!("Part 1: {}", candidate_id * candidate_minute);
-
-    let (candidate_id, candidate_minute, _) = plan.iter()
         .map(|(&id, asleep_map)| (
             id,
             asleep_map.iter()
-                .map(|(&id, asleep_vec)| (id, asleep_vec.len()))
+                .max_by_key(|&(_, asleep_vec)| asleep_vec.len())
+                .map(|(&minute, _)| minute)
+                .unwrap_or(0)
+        ))
+        .unwrap_or((0, 0));
+
+    println!("Part 1: {}", candidate_id * candidate_minute);
+
+    let (candidate_id, candidate_minute) = plan.iter()
+        .map(|(&id, asleep_map)| (
+            id,
+            asleep_map.iter()
+                .map(|(&minute, asleep_vec)| (minute, asleep_vec.len()))
                 .max_by_key(|&(_, value)| value)
                 .unwrap_or((0, 0))
         ))
-        .map(|(x, (y, z))| (x, y, z))
-        .max_by_key(|&(_, _, value)| value)
-        .unwrap_or((0, 0, 0));
+        .max_by_key(|&(_, (_, value))| value)
+        .map(|(x, (y, _))| (x, y))
+        .unwrap_or((0, 0));
 
     println!("Part 2: {}", candidate_id * candidate_minute);
 }
