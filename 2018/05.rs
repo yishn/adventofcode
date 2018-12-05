@@ -9,11 +9,11 @@ fn get_input() -> std::io::Result<String> {
     Ok(contents)
 }
 
-fn react(input: &str) -> String {
-    input.chars()
-    .fold(String::new(), |mut acc, c| {
+fn react<T>(chars: T) -> String
+where T: Iterator<Item = char> {
+    chars.fold(String::new(), |mut acc, c| {
         match acc.chars().rev().next() {
-            Some(d) if d.eq_ignore_ascii_case(&c) && d != c => { acc.pop(); },
+            Some(d) if d != c && d.eq_ignore_ascii_case(&c) => { acc.pop(); },
             _ => acc.push(c)
         };
 
@@ -23,17 +23,13 @@ fn react(input: &str) -> String {
 
 fn main() {
     let input = get_input().unwrap();
-    let reacted = react(input.trim());
+    let polymer = input.trim();
+    let reacted = react(polymer.chars());
 
     println!("Part 1: {}", reacted.len());
 
     let improved = "abcdefghijklmnopqrstuvwxyz".chars()
-        .map(|c| {
-            let mut polymer = input.clone();
-
-            polymer.retain(|d| !d.eq_ignore_ascii_case(&c));
-            react(&polymer)
-        })
+        .map(|c| react(polymer.chars().filter(|d| !d.eq_ignore_ascii_case(&c))))
         .map(|reacted| reacted.len())
         .min()
         .unwrap();
