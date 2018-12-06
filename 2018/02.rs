@@ -14,11 +14,7 @@ fn get_char_histogram(input: &str) -> HashMap<char, usize> {
     let mut result = HashMap::new();
 
     for c in input.chars() {
-        let v = match result.get(&c) {
-            Some(&v) => v,
-            None => 0
-        };
-
+        let v = result.get(&c).cloned().unwrap_or(0);
         result.insert(c, v + 1);
     }
 

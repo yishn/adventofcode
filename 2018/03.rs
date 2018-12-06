@@ -108,8 +108,5 @@ fn main() {
         .count();
 
     println!("Part 1: {}", overlapped);
-    println!("Part 2: {}", match no_overlaps.iter().next() {
-        Some(x) => x,
-        None => return
-    });
+    println!("Part 2: {}", no_overlaps.iter().cloned().next().unwrap_or(0));
 }

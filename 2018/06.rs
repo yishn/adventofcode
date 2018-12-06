@@ -30,7 +30,7 @@ fn main() {
     let max_x = pivots.iter().map(|c| c.0).max().unwrap_or(0);
     let min_y = pivots.iter().map(|c| c.1).min().unwrap_or(0);
     let max_y = pivots.iter().map(|c| c.1).max().unwrap_or(0);
-    let is_inner_pivot = |Coord(x, y)| x != min_x && x != max_x && y != min_y && y != max_y;
+    let is_inner_area = |Coord(x, y)| x > min_x && x < max_x && y > min_y && y < max_y;
 
     let all_coords: Vec<Coord> = (min_x..max_x + 1)
         .flat_map(|x| (min_y..max_y + 1).map(move |y| Coord(x, y)))
@@ -47,7 +47,7 @@ fn main() {
                 .map(|(_, &c)| c);
 
             match (nearest_pivots.next(), nearest_pivots.next()) {
-                (Some(pivot), None) if is_inner_pivot(pivot) => {
+                (Some(pivot), None) if is_inner_area(pivot) => {
                     let value = acc.get(&pivot).cloned().unwrap_or(0);
                     acc.insert(pivot, value + 1);
                 },
@@ -62,8 +62,7 @@ fn main() {
     println!("Part 1: {}", largest_area);
 
     let safe_area = all_coords.iter()
-        .cloned()
-        .filter(|&coord| pivots.iter().map(|&c| manhattan_dist(c, coord)).sum::<isize>() < 10000)
+        .filter(|&&coord| pivots.iter().map(|&c| manhattan_dist(c, coord)).sum::<isize>() < 10000)
         .count();
 
     println!("Part 2: {}", safe_area);
