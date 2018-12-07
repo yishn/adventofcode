@@ -1,3 +1,5 @@
+use std::cmp::min;
+use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -12,7 +14,64 @@ fn get_input() -> std::io::Result<String> {
 }
 
 type Graph<T> = HashMap<T, HashSet<T>>;
-type Timetable<T> = HashMap<usize, HashMap<usize, T>>;
+
+struct Timetable<'a, T: 'a>
+where T: Hash + Eq {
+    durations: &'a HashMap<T, usize>,
+    by_time: HashMap<usize, HashMap<usize, T>>,
+    stop_times: HashMap<T, usize>
+}
+
+impl<'a, T: 'a> Timetable<'a, T>
+where T: Hash + Eq + Copy {
+    fn new(durations: &HashMap<T, usize>) -> Timetable<T> {
+        Timetable {
+            durations,
+            by_time: HashMap::new(),
+            stop_times: HashMap::new()
+        }
+    }
+
+    fn allocate(&mut self, job: T, worker: usize, time: usize) {
+        let duration = self.durations.get(&job).cloned().unwrap_or(1);
+
+        if self.stop_times.contains_key(&job) {
+            return;
+        }
+
+        for t in time..time + duration {
+            if !self.by_time.contains_key(&t) {
+                self.by_time.insert(t, HashMap::new());
+            }
+
+            let worker_data = self.by_time.get_mut(&t).unwrap();
+            worker_data.insert(worker, job);
+        }
+
+        self.stop_times.insert(job, time + duration);
+    }
+}
+
+impl<'a> fmt::Debug for Timetable<'a, char> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Timetable {{")?;
+
+        for t in 0..self.by_time.keys().cloned().max().unwrap_or(0) + 1 {
+            write!(f, "  ({:4}) ", t)?;
+
+            if let Some(worker_data) = self.by_time.get(&t) {
+                for id in 0..worker_data.keys().cloned().max().unwrap_or(0) + 1 {
+                    write!(f, "{:?} ", worker_data.get(&id).cloned().unwrap_or(' '))?;
+                }
+            }
+
+            writeln!(f, "")?;
+        }
+
+        write!(f, "}}")?;
+        Ok(())
+    }
+}
 
 fn parse_input(input: &str) -> Graph<char> {
     fn first_char(x: &str) -> Option<char> {
@@ -44,7 +103,8 @@ fn parse_input(input: &str) -> Graph<char> {
     })
 }
 
-fn get_root_nodes<T: Eq + Hash + Copy>(graph: &Graph<T>) -> Vec<T> {
+fn get_root_nodes<T>(graph: &Graph<T>) -> Vec<T>
+where T: Eq + Hash + Copy {
     graph.keys()
     .cloned()
     .filter(|&k| {
@@ -55,7 +115,8 @@ fn get_root_nodes<T: Eq + Hash + Copy>(graph: &Graph<T>) -> Vec<T> {
     .collect()
 }
 
-fn get_order<T: Eq + Hash + Copy + Ord>(mut graph: Graph<T>) -> Vec<T> {
+fn get_order<T>(mut graph: Graph<T>) -> Vec<T>
+where T: Eq + Hash + Copy + Ord {
     let mut result = vec![];
     let mut root_nodes;
 
@@ -76,32 +137,74 @@ fn get_order<T: Eq + Hash + Copy + Ord>(mut graph: Graph<T>) -> Vec<T> {
     result
 }
 
-fn allocate<T>(timetable: &mut Timetable<T>, node: T, worker: usize, time: usize, duration: usize)
-where T: Copy {
-    for t in time..time + duration {
-        if !timetable.contains_key(&t) {
-            timetable.insert(t, HashMap::new());
-        }
-
-        let workers = timetable.get_mut(&t).unwrap();
-        workers.insert(worker, node);
-    }
-}
-
-fn has_time<T>(timetable: &mut Timetable<T>, worker: usize, time: usize) -> bool {
-    timetable.get(&time)
-    .and_then(|workers| workers.get(&worker))
-    .is_some()
-}
-
-fn create_timetable<T>(graph: Graph<T>, times: &HashMap<T, usize>, workers: usize) -> Timetable<T>
+fn create_timetable<T>(mut graph: Graph<T>, durations: &HashMap<T, usize>, workers: usize) -> Timetable<T>
 where T: Eq + Hash + Copy + Ord {
-    let mut result = Timetable::new();
+    let mut result = Timetable::new(durations);
     let mut root_nodes;
+    let mut busy = vec![];
+    let mut t = 0;
 
     loop {
+        // Wait for free workers
+
+        loop {
+            if !result.by_time.contains_key(&t) {
+                result.by_time.insert(t, HashMap::new());
+            }
+
+            let busy_workers_count = result.by_time.get(&t).unwrap().keys().count();
+
+            if busy_workers_count >= workers {
+                t += 1;
+            } else {
+                break;
+            }
+        }
+
+        // Remove jobs that have stopped
+
+        let stopped: Vec<T> = busy.iter().cloned()
+            .filter(|&job| result.stop_times.get(&job).cloned().unwrap() <= t)
+            .collect();
+
+        for node in stopped.iter() {
+            graph.remove(node);
+        }
+
+        busy.retain(|job| !stopped.contains(job));
+
+        // Get available jobs
+
         root_nodes = get_root_nodes(&graph);
+        root_nodes.retain(|job| !busy.contains(job));
         root_nodes.sort();
+
+        if root_nodes.len() == 0 {
+            if busy.len() == 0 {
+                break;
+            } else {
+                t += 1;
+                continue;
+            }
+        }
+
+        // Allocate jobs
+
+        let free_workers: Vec<usize> = {
+            let worker_data = result.by_time.get(&t).unwrap();
+
+            (0..workers)
+            .filter(|id| !worker_data.contains_key(id))
+            .collect()
+        };
+
+        let new_job_count = min(free_workers.len(), root_nodes.len());
+        let new_jobs: Vec<T> = root_nodes.iter().cloned().take(new_job_count).collect();
+
+        for (job, worker) in new_jobs.iter().cloned().zip(free_workers.iter().cloned()) {
+            result.allocate(job, worker, t);
+            busy.push(job);
+        }
     }
 
     result
@@ -110,10 +213,21 @@ where T: Eq + Hash + Copy + Ord {
 fn main() {
     let input = get_input().unwrap();
     let graph = parse_input(&input);
-    let order = get_order(graph);
+    let order = get_order(graph.clone());
 
     println!("Part 1: {}", order.into_iter().fold(String::new(), |mut acc, x| {
         acc.push(x);
         acc
     }));
+
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let durations = alphabet.chars()
+        .enumerate()
+        .fold(HashMap::new(), |mut acc, (i, c)| {
+            acc.insert(c, i + 61);
+            acc
+        });
+    let timetable = create_timetable(graph, &durations, 5);
+
+    println!("Part 2: {}", timetable.by_time.keys().cloned().max().unwrap_or(0));
 }
