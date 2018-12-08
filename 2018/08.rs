@@ -27,32 +27,20 @@ impl Graph {
     }
 }
 
-fn parse_node(graph: &mut Graph, tokens: &[usize]) -> Option<(usize, usize)> {
-    if tokens.len() < 2 {
-        return None;
-    }
+fn parse_node<T>(graph: &mut Graph, tokens: &mut T) -> Option<usize>
+where T: Iterator<Item = usize> {
+    let (children_count, metadata_count) = match (tokens.next(), tokens.next()) {
+        (Some(x), Some(y)) => (x, y),
+        _ => return None
+    };
 
-    let children_count = *tokens.get(0).unwrap();
-    let metadata_count = *tokens.get(1).unwrap();
-    let mut start = 2;
-    let mut children_ids = vec![];
+    let children_ids: Vec<usize> = (0..children_count)
+        .filter_map(|_| parse_node(graph, tokens))
+        .collect();
 
-    for _ in 0..children_count {
-        let (node_id, length) = match parse_node(graph, &tokens[start..]) {
-            Some(x) => x,
-            _ => return None
-        };
-
-        children_ids.push(node_id);
-        start += length;
-    }
-
-    let length = start + metadata_count;
-    let metadata = tokens[start..length].to_vec();
-
-    if metadata.len() != metadata_count {
-        return None;
-    }
+    let metadata: Vec<usize> = (0..metadata_count)
+        .filter_map(|_| tokens.next())
+        .collect();
 
     let node = Node(metadata);
     let node_id = graph.nodes.len();
@@ -60,15 +48,15 @@ fn parse_node(graph: &mut Graph, tokens: &[usize]) -> Option<(usize, usize)> {
     graph.nodes.push(node);
     graph.children.insert(node_id, children_ids);
 
-    Some((node_id, length))
+    Some(node_id)
 }
 
 fn parse_input(input: &str) -> Option<(Graph, usize)> {
     let mut graph = Graph::new();
-    let tokens: Vec<usize> = input.split(' ').filter_map(|x| x.parse::<usize>().ok()).collect();
+    let mut tokens = input.split(' ').filter_map(|x| x.parse::<usize>().ok());
 
-    parse_node(&mut graph, &tokens[..])
-    .map(|(root_id, _)| (graph, root_id))
+    parse_node(&mut graph, &mut tokens)
+    .map(|root_id| (graph, root_id))
 }
 
 fn get_value(graph: &Graph, id: usize) -> usize {
