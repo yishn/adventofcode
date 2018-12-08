@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -145,20 +144,8 @@ where T: Eq + Hash + Copy + Ord {
     let mut t = 0;
 
     loop {
-        // Wait for free workers
-
-        loop {
-            if !result.by_time.contains_key(&t) {
-                result.by_time.insert(t, HashMap::new());
-            }
-
-            let busy_workers_count = result.by_time.get(&t).unwrap().keys().count();
-
-            if busy_workers_count >= workers {
-                t += 1;
-            } else {
-                break;
-            }
+        if !result.by_time.contains_key(&t) {
+            result.by_time.insert(t, HashMap::new());
         }
 
         // Remove jobs that have stopped
@@ -198,10 +185,7 @@ where T: Eq + Hash + Copy + Ord {
             .collect()
         };
 
-        let new_job_count = min(free_workers.len(), root_nodes.len());
-        let new_jobs: Vec<T> = root_nodes.iter().cloned().take(new_job_count).collect();
-
-        for (job, worker) in new_jobs.iter().cloned().zip(free_workers.iter().cloned()) {
+        for (job, worker) in root_nodes.iter().cloned().zip(free_workers.iter().cloned()) {
             result.allocate(job, worker, t);
             busy.push(job);
         }
