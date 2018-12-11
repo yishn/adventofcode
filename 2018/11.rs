@@ -52,13 +52,9 @@ fn main() {
     for (i, power) in fuel_cells.iter().cloned().enumerate() {
         let x = i % SIZE;
         let sum = power
-            + partial_sums.get(i - SIZE).cloned().unwrap_or(0)
-            + if x > 0 {
-                partial_sums.get(i - 1).cloned().unwrap_or(0)
-                - partial_sums.get(i - SIZE - 1).cloned().unwrap_or(0)
-            } else {
-                0
-            };
+            + if i >= SIZE { partial_sums[i - SIZE] } else { 0 }
+            + if x > 0 { partial_sums[i - 1] } else { 0 }
+            - if x > 0 && i >= SIZE + 1 { partial_sums[i - SIZE - 1] } else { 0 };
 
         partial_sums.push(sum);
     }
