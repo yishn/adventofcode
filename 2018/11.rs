@@ -47,15 +47,21 @@ fn main() {
         })
         .collect();
 
-    let partial_sums: Vec<isize> = (1..SIZE + 1)
-        .flat_map(|y| (1..SIZE + 1).map(move |x| (x, y)))
-        .map(|(x, y)| {
-            (1..y + 1)
-            .flat_map(|b| (1..x + 1).map(move |a| coord_to_index((a, b))))
-            .map(|i| fuel_cells.get(i).cloned().unwrap())
-            .sum::<isize>()
-        })
-        .collect();
+    let mut partial_sums = Vec::new();
+
+    for (i, power) in fuel_cells.iter().cloned().enumerate() {
+        let x = i % SIZE;
+        let sum = power
+            + partial_sums.get(i - SIZE).cloned().unwrap_or(0)
+            + if x > 0 {
+                partial_sums.get(i - 1).cloned().unwrap_or(0)
+                - partial_sums.get(i - SIZE - 1).cloned().unwrap_or(0)
+            } else {
+                0
+            };
+
+        partial_sums.push(sum);
+    }
 
     get_largest_fixed_square(&partial_sums, 3)
     .map(|((x, y), _)| {
