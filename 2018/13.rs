@@ -14,6 +14,7 @@ fn get_input() -> std::io::Result<String> {
 type Point = (isize, isize);
 type Tracks = HashMap<Point, Vec<Point>>;
 
+#[derive(Clone)]
 struct Cart {
     position: Point,
     direction: Point,
@@ -113,45 +114,56 @@ fn parse(input: &str) -> (Tracks, Vec<Cart>) {
     })
 }
 
-fn tick(tracks: &Tracks, carts: &mut [Cart]) -> Option<Point> {
+fn tick(tracks: &Tracks, carts: &mut Vec<Cart>) -> Vec<Point> {
+    let mut collisions = Vec::new();
+    let mut i = 0;
+
     carts.sort_unstable_by_key(|cart| (cart.position.1, cart.position.0));
 
-    for i in 0..carts.len() {
-        {
-            let mut cart = carts.get_mut(i).unwrap();
+    while i < carts.len() {
+        let new_position = {
+            let cart = carts.get_mut(i).unwrap();
             let neighbors = tracks.get(&cart.position).unwrap();
+
             cart.move_cart(neighbors);
+            cart.position
+        };
+
+        if let Some(j) = carts.iter().enumerate().position(|(j, cart)| j != i && cart.position == new_position) {
+            carts.retain(|cart| cart.position != new_position);
+            collisions.push(new_position);
+
+            if j < i {
+                i -= 1;
+            }
         }
 
-        if let Some(collision) = get_crash_location(carts) {
-            return Some(collision);
-        }
+        i += 1;
     }
 
-    None
-}
-
-fn get_crash_location(carts: &[Cart]) -> Option<Point> {
-    let positions = carts.iter()
-        .map(|cart| cart.position)
-        .collect::<Vec<_>>();
-
-    positions.iter()
-    .cloned()
-    .enumerate()
-    .filter(|&(i, p)| positions.iter().skip(i + 1).any(|&q| q == p))
-    .map(|(_, p)| p)
-    .next()
+    collisions
 }
 
 fn main() {
     let input = get_input().unwrap();
     let (tracks, mut carts) = parse(&input);
+    let original_carts = carts.clone();
 
     loop {
-        if let Some((x, y)) = tick(&tracks, &mut carts) {
+        let collisions = tick(&tracks, &mut carts);
+
+        if let Some((x, y)) = collisions.into_iter().next() {
             println!("Part 1: {},{}", x, y);
             break;
         }
     }
+
+    let mut carts = original_carts;
+
+    while carts.len() > 1 {
+        tick(&tracks, &mut carts);
+    }
+
+    carts.into_iter().next()
+    .map(|cart| println!("Part 2: {},{}", cart.position.0, cart.position.1));
 }
