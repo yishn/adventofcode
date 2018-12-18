@@ -61,7 +61,7 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
     let mut flows = DepthMap::new();
     let mut blocked = map.clone();
 
-    fn flows_through((x, y): Point, blocked: &DepthMap) -> bool {
+    fn flows_down((x, y): Point, blocked: &DepthMap) -> bool {
         !blocked.contains(&(x, y + 1))
     }
 
@@ -76,17 +76,23 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
     ) {
         let (sx, sy) = source;
 
+        if water.contains(&source) {
+            return;
+        }
+
         let (ax, ay) = (sy..maxy + 1)
             .map(|y| (sx, y))
-            .find(|&p| !flows_through(p, &blocked))
+            .find(|&p| !flows_down(p, &blocked))
             .unwrap_or((sx, maxy));
+
+        let infinite = ay == maxy;
 
         let ((lx, ly), (rx, ry)) = {
             let left = (0..)
                 .map(|x| (ax - x, ay))
                 .find(|&(x, y)| {
                     blocked.contains(&(x - 1, y))
-                    || flows_through((x, y), &blocked)
+                    || flows_down((x, y), &blocked)
                 })
                 .unwrap();
 
@@ -94,7 +100,7 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
                 .map(|x| (ax + x, ay))
                 .find(|&(x, y)| {
                     blocked.contains(&(x + 1, y))
-                    || flows_through((x, y), &blocked)
+                    || flows_down((x, y), &blocked)
                 })
                 .unwrap();
 
@@ -103,15 +109,11 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
 
         // Update flows & water
 
-        let left_overflow = flows_through((lx, ly), &blocked);
-        let right_overflow = flows_through((rx, ry), &blocked);
+        let left_overflow = flows_down((lx, ly), &blocked);
+        let right_overflow = flows_down((rx, ry), &blocked);
         let overflow = left_overflow || right_overflow;
         let top = (lx..rx + 1).map(|x| (x, ay)).collect::<DepthMap>();
-
-        let old_water_count = water.len();
         let old_flow_count = flows.len();
-
-        println!("{:?} {:?} {:?}: {:?}, {:?}, {:?} - {}, {}", source, left_overflow, right_overflow, (lx, ly), (ax, ay), (rx, ry), water.len(), flows.len());
 
         if !overflow {
             *water = water.union(&top).cloned().collect();
@@ -129,6 +131,10 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
                     .map(|y| (sx, y))
                 )
                 .collect();
+
+            if old_flow_count == flows.len() {
+                return;
+            }
         }
 
         // Propagate
@@ -146,11 +152,7 @@ fn fill_water(source: Point, map: &DepthMap) -> (DepthMap, DepthMap) {
             inner((rx, ry), map, water, flows, blocked, miny, maxy);
         }
 
-        if overflow && old_flow_count == flows.len() && old_water_count == water.len() {
-            return;
-        }
-
-        if !overflow {
+        if !infinite {
             inner(source, map, water, flows, blocked, miny, maxy);
         }
     }
@@ -166,4 +168,5 @@ fn main() {
     let (water, flows) = fill_water((500, 0), &depth_map);
 
     println!("Part 1: {}", water.union(&flows).count());
+    println!("Part 2: {}", water.len());
 }
