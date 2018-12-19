@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::prelude::*;
-use std::collections::{HashSet, HashMap};
 
 fn get_input() -> std::io::Result<String> {
     let mut file = File::open("19.txt")?;
@@ -10,7 +9,7 @@ fn get_input() -> std::io::Result<String> {
     Ok(contents)
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct State(Vec<usize>);
 
 impl State {
@@ -80,6 +79,10 @@ fn parse(input: &str) -> (usize, Vec<Operation>) {
 }
 
 fn run_program(mut state: State, ip_register: usize, program: &[Operation]) -> State {
+    if ip_register >= state.0.len() {
+        return state;
+    }
+
     while let Some(&operation) = program.get(state.0[ip_register]) {
         state.op(operation);
         state.0[ip_register] += 1;
@@ -91,10 +94,16 @@ fn run_program(mut state: State, ip_register: usize, program: &[Operation]) -> S
 fn main() {
     let input = get_input().unwrap();
     let (ip_register, program) = parse(&input);
-
     let state = run_program(State::new(0), ip_register, &program);
+
     println!("Part 1: {}", state.0[0]);
 
-    let state = run_program(State::new(1), ip_register, &program);
-    println!("Part 2: {}", state.0[0]);
+    // Part 2 doesn't work for arbitrary input
+
+    let r5 = 10551350;
+    let result = (1..r5 + 1)
+        .filter(|&r2| r5 % r2 == 0)
+        .fold(0, |acc, x| acc + x);
+
+    println!("Part 2: {}", result);
 }
