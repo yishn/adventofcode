@@ -171,12 +171,10 @@ fn attack(group: &GroupInfo, target: &GroupInfo) -> Option<GroupInfo> {
     }
 }
 
-fn main() {
-    let input = get_input().unwrap();
-    let mut groups = parse(&input);
-
+fn fight(mut groups: Vec<GroupInfo>) -> Option<Vec<GroupInfo>> {
     while groups.len() > 0 && !groups.iter().all(|g| g.friendly == groups[0].friendly) {
         let attack_order = get_attack_order(&mut groups);
+        let mut change = false;
 
         for (attacker_id, defender_id) in attack_order.into_iter() {
             if defender_id.is_none() {
@@ -184,13 +182,17 @@ fn main() {
             }
 
             let defender_id = defender_id.unwrap();
+            let mut defender_units = 0;
 
             let defender_after = {
                 let attacker = groups.iter().find(|g| g.id == attacker_id);
                 let defender = groups.iter().find(|g| g.id == defender_id);
 
                 match (attacker, defender) {
-                    (Some(x), Some(y)) => Some(attack(x, y)),
+                    (Some(x), Some(y)) => {
+                        defender_units = y.units;
+                        Some(attack(x, y))
+                    },
                     _ => None
                 }
             };
@@ -199,12 +201,18 @@ fn main() {
                 Some(Some(defender_after)) => {
                     // Defender lives
 
+                    if defender_after.units != defender_units {
+                        change = true;
+                    }
+
                     groups.into_iter()
                     .map(|g| if g.id == defender_id { defender_after.clone() } else { g })
                     .collect()
                 },
                 Some(None) => {
                     // Defender dies
+
+                    change = true;
 
                     groups.into_iter()
                     .filter(|g| g.id != defender_id)
@@ -217,11 +225,48 @@ fn main() {
                 }
             };
         }
+
+        if !change {
+            return None;
+        }
     }
 
-    let unit_count = groups.iter()
-        .map(|g| g.units)
-        .sum::<usize>();
+    Some(groups)
+}
 
-    println!("Part 1: {}", unit_count);
+fn main() {
+    let input = get_input().unwrap();
+    let groups = parse(&input);
+
+    fight(groups.clone())
+    .map(|final_groups| {
+        final_groups.iter()
+        .map(|g| g.units)
+        .sum::<usize>()
+    })
+    .map(|unit_count| println!("Part 1: {}", unit_count));
+
+    (1..)
+    .inspect(|x| if x % 1000 == 0 { println!("{}", x) })
+    .filter_map(|boost| {
+        let boosted_groups = groups.iter()
+            .cloned()
+            .map(|mut group| {
+                if group.friendly {
+                    group.damage += boost;
+                }
+
+                group
+            })
+            .collect::<Vec<_>>();
+
+        fight(boosted_groups)
+    })
+    .find(|final_groups| final_groups.len() > 0 && final_groups[0].friendly)
+    .map(|final_groups| {
+        final_groups.iter()
+        .map(|g| g.units)
+        .sum::<usize>()
+    })
+    .map(|unit_count| println!("Part 2: {}", unit_count));
 }
