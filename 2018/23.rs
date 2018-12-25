@@ -67,7 +67,7 @@ fn subdivide_cube((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> Vec<Cube> {
     .collect()
 }
 
-fn cube_to_range((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> Nanobot {
+fn approximate_cube_by_range((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> Nanobot {
     let xmid = (xmin + xmax) / 2;
     let ymid = (ymin + ymax) / 2;
     let zmid = (zmin + zmax) / 2;
@@ -81,7 +81,7 @@ fn cube_to_range((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> Nanobot {
         manhattan_dist(position, (xmax, ymin, zmax)),
         manhattan_dist(position, (xmax, ymax, zmin)),
         manhattan_dist(position, (xmax, ymax, zmax))
-    ].into_iter().cloned().min().unwrap();
+    ].into_iter().cloned().max().unwrap();
 
     Nanobot {
         position,
@@ -89,12 +89,12 @@ fn cube_to_range((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> Nanobot {
     }
 }
 
-fn is_position((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> bool {
+fn is_point((xmin, xmax, ymin, ymax, zmin, zmax): Cube) -> bool {
     xmin == xmax && ymin == ymax && zmin == zmax
 }
 
 fn bots_near_cube(bots: &[Nanobot], cube: Cube) -> Vec<&Nanobot> {
-    let range = cube_to_range(cube);
+    let range = approximate_cube_by_range(cube);
 
     bots.iter()
     .filter(|&bot| has_range_overlap(bot, &range))
@@ -119,12 +119,13 @@ fn find_position(bots: &[Nanobot]) -> Option<Position> {
     heap.push((bots.len(), start_cube));
 
     while let Some((bots_count, cube)) = heap.pop() {
-        if is_position(cube) {
+        if is_point(cube) {
             let position = (cube.0, cube.2, cube.4);
             let distance = manhattan_dist(position, (0, 0, 0)) as isize;
+            let potential_max = (bots_count, -distance, position);
 
-            if max.is_none() || max.unwrap() < (bots_count, -distance, position) {
-                max = Some((bots_count, -distance, position));
+            if max.is_none() || max.unwrap() < potential_max {
+                max = Some(potential_max);
             }
         }
 
