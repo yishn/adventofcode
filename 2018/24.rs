@@ -247,7 +247,6 @@ fn main() {
     .map(|unit_count| println!("Part 1: {}", unit_count));
 
     (1..)
-    .inspect(|x| if x % 1000 == 0 { println!("{}", x) })
     .filter_map(|boost| {
         let boosted_groups = groups.iter()
             .cloned()
