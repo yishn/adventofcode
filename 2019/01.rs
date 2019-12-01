@@ -9,40 +9,33 @@ fn get_input() -> std::io::Result<String> {
   Ok(contents)
 }
 
-fn get_fuel(mass: i32) -> i32 {
-  *[mass / 3 - 2, 0].into_iter().max().unwrap()
+fn get_fuel(mass: u64) -> u64 {
+  (mass / 3).checked_sub(2).unwrap_or(0)
 }
 
-fn get_fuel_recursive(mass: i32) -> i32 {
-  let mut result = get_fuel(mass);
-  let mut residual_fuel = result;
+fn get_fuel_recursive(mass: u64) -> u64 {
+  let initial_fuel = get_fuel(mass);
 
-  loop {
-    residual_fuel = get_fuel(residual_fuel);
-
-    if residual_fuel <= 0 {
-      break;
-    }
-
-    result += residual_fuel;
+  if initial_fuel <= 0 {
+    0
+  } else {
+    initial_fuel + get_fuel_recursive(initial_fuel)
   }
-
-  result
 }
 
 fn main() {
   let input = get_input().unwrap();
   let fuel = input.lines()
-    .filter_map(|line| line.parse::<i32>().ok())
+    .filter_map(|line| line.parse::<u64>().ok())
     .map(get_fuel)
-    .sum::<i32>();
+    .sum::<u64>();
 
   println!("Part 1: {}", fuel);
 
   let fuel = input.lines()
-    .filter_map(|line| line.parse::<i32>().ok())
+    .filter_map(|line| line.parse::<u64>().ok())
     .map(get_fuel_recursive)
-    .sum::<i32>();
+    .sum::<u64>();
 
   println!("Part 2: {}", fuel);
 }
