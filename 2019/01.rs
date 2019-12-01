@@ -25,16 +25,18 @@ fn get_fuel_recursive(mass: u64) -> u64 {
 
 fn main() {
   let input = get_input().unwrap();
-  let fuel = input.lines()
+  let masses = input.lines()
     .filter_map(|line| line.parse::<u64>().ok())
-    .map(get_fuel)
+    .collect::<Vec<_>>();
+
+  let fuel = masses.iter()
+    .map(|&x| get_fuel(x))
     .sum::<u64>();
 
   println!("Part 1: {}", fuel);
 
-  let fuel = input.lines()
-    .filter_map(|line| line.parse::<u64>().ok())
-    .map(get_fuel_recursive)
+  let fuel = masses.iter()
+    .map(|&x| get_fuel_recursive(x))
     .sum::<u64>();
 
   println!("Part 2: {}", fuel);
