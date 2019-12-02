@@ -9,25 +9,26 @@ fn get_input() -> std::io::Result<String> {
   Ok(contents)
 }
 
-fn run_program(program: &mut Vec<usize>) -> &mut Vec<usize> {
+fn run_program(program: &mut Vec<usize>) {
   let mut pointer = 0;
 
   loop {
-    let v = |p| program[program[p]];
-    let value = match program[pointer] {
-      1 => v(pointer + 1) + v(pointer + 2),
-      2 => v(pointer + 1) * v(pointer + 2),
-      99 => break,
-      _ => panic!()
+    let target_value = {
+      let get = |p| program[program[p]];
+
+      match program[pointer] {
+        1 => get(pointer + 1) + get(pointer + 2),
+        2 => get(pointer + 1) * get(pointer + 2),
+        99 => break,
+        _ => panic!()
+      }
     };
 
     let target_index = program[pointer + 3];
-    program[target_index] = value;
+    program[target_index] = target_value;
 
     pointer += 4;
   }
-
-  program
 }
 
 fn calculate_output(mut program: Vec<usize>, input: (usize, usize)) -> usize {
