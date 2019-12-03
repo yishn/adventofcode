@@ -2,15 +2,15 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Direction {
-  Left(u32),
-  Right(u32),
-  Up(u32),
-  Down(u32)
+  Left,
+  Right,
+  Up,
+  Down
 }
 
-type Wire = Vec<Direction>;
+type Wire = Vec<(Direction, usize)>;
 type Grid = HashMap<(i32, i32), HashMap<usize, usize>>;
 
 fn get_input() -> std::io::Result<String> {
@@ -33,13 +33,16 @@ fn parse_wires(input: &str) -> Vec<Wire> {
       let direction = token.chars().nth(0);
       let steps = &token[1..];
 
-      steps.parse::<u32>().ok()
-      .and_then(|steps| match direction {
-        Some('L') => Some(Direction::Left(steps)),
-        Some('R') => Some(Direction::Right(steps)),
-        Some('U') => Some(Direction::Up(steps)),
-        Some('D') => Some(Direction::Down(steps)),
-        _ => None
+      steps.parse::<usize>().ok()
+      .and_then(|steps| {
+        match direction {
+          Some('L') => Some(Direction::Left),
+          Some('R') => Some(Direction::Right),
+          Some('U') => Some(Direction::Up),
+          Some('D') => Some(Direction::Down),
+          _ => None
+        }
+        .map(|direction| (direction, steps))
       })
     })
     .collect::<Vec<_>>()
@@ -51,12 +54,12 @@ fn trace_wire(grid: &mut Grid, id: usize, wire: &Wire) {
   let mut position = (0, 0);
   let mut timestamp = 0;
 
-  for direction in wire.iter() {
-    let (move_vector, steps) = match direction {
-      &Direction::Left(x) => ((-1, 0), x),
-      &Direction::Right(x) => ((1, 0), x),
-      &Direction::Up(x) => ((0, 1), x),
-      &Direction::Down(x) => ((0, -1), x)
+  for &(direction, steps) in wire.iter() {
+    let move_vector = match direction {
+      Direction::Left => (-1, 0),
+      Direction::Right => (1, 0),
+      Direction::Up => (0, 1),
+      Direction::Down => (0, -1)
     };
 
     for _ in 0..steps {
@@ -87,9 +90,8 @@ fn iter_collision_times<'a>(grid: &'a Grid) -> impl Iterator<Item = usize> + 'a 
   .map(move |pos| {
     grid.get(&pos)
     .unwrap()
-    .iter()
-    .map(|(_, timestamp)| timestamp)
-    .sum::<usize>()
+    .values()
+    .sum()
   })
 }
 
