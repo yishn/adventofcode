@@ -48,8 +48,8 @@ fn main() {
 
   println!("Part 1: {}", calculate_output(program.clone(), (12, 2)));
 
-  for i in 0..100 {
-    for j in 0..100 {
+  for i in 0..=99 {
+    for j in 0..=99 {
       let output = calculate_output(program.clone(), (i, j));
 
       if output == 19690720 {
