@@ -82,13 +82,13 @@ fn trace_wire(grid: &mut Grid, id: usize, wire: &Wire) {
   }
 }
 
-fn iter_collisions<'a>(grid: &'a Grid) -> impl Iterator<Item = (i32, i32)> + 'a {
+fn iter_collisions(grid: &Grid) -> impl Iterator<Item = (i32, i32)> + '_ {
   grid.iter()
   .filter(|(_, ids)| ids.len() > 1)
   .map(|(&pos, _)| pos)
 }
 
-fn iter_collision_times<'a>(grid: &'a Grid) -> impl Iterator<Item = usize> + 'a {
+fn iter_collision_times(grid: &Grid) -> impl Iterator<Item = usize> + '_ {
   iter_collisions(grid)
   .map(move |pos| {
     grid.get(&pos)
