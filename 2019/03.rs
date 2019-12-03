@@ -30,10 +30,6 @@ fn parse_wires(input: &str) -> Vec<Wire> {
   .map(|line| {
     line.split(',')
     .filter_map(|token| {
-      if token.len() < 2 {
-        return None;
-      }
-
       let steps = token.get(1..).and_then(|steps| steps.parse::<usize>().ok());
       let direction = match token.chars().nth(0) {
         Some('L') => Some(Direction::Left),
