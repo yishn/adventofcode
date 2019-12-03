@@ -4,5 +4,5 @@
 
 Cargo.lock
 Cargo.toml
-/target
-**/*.rs.bk
+target
+*.rs.bk
