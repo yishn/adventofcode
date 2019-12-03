@@ -30,20 +30,23 @@ fn parse_wires(input: &str) -> Vec<Wire> {
   .map(|line| {
     line.split(',')
     .filter_map(|token| {
-      let direction = token.chars().nth(0);
-      let steps = &token[1..];
+      if token.len() < 2 {
+        return None;
+      }
 
-      steps.parse::<usize>().ok()
-      .and_then(|steps| {
-        match direction {
-          Some('L') => Some(Direction::Left),
-          Some('R') => Some(Direction::Right),
-          Some('U') => Some(Direction::Up),
-          Some('D') => Some(Direction::Down),
-          _ => None
-        }
-        .map(|direction| (direction, steps))
-      })
+      let steps = token.get(1..).and_then(|steps| steps.parse::<usize>().ok());
+      let direction = match token.chars().nth(0) {
+        Some('L') => Some(Direction::Left),
+        Some('R') => Some(Direction::Right),
+        Some('U') => Some(Direction::Up),
+        Some('D') => Some(Direction::Down),
+        _ => None
+      };
+
+      match (direction, steps) {
+        (Some(direction), Some(steps)) => Some((direction, steps)),
+        _ => None
+      }
     })
     .collect::<Vec<_>>()
   })
