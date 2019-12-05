@@ -52,7 +52,7 @@ fn parse_instruction(numbers: &[i32]) -> Instruction {
   };
 
   let get_parameter_mode = |i| {
-    match (instruction_code - op_code as i32) / 10i32.pow(2 + i as u32) % 10 {
+    match (instruction_code - op_code) / 10i32.pow(2 + i as u32) % 10 {
       0 => ParameterMode::Position,
       1 => ParameterMode::Immediate,
       _ => panic!()
@@ -81,41 +81,27 @@ fn run_program(program: &mut Vec<i32>, input: i32) -> Vec<i32> {
         (ParameterMode::Immediate, value) => value
       };
 
-      match instruction.operation {
-        OperationType::Add => (
-          Some(get_input(0) + get_input(1)),
-          Some(instruction.inputs[2].1 as usize)
-        ),
-        OperationType::Multiply => (
-          Some(get_input(0) * get_input(1)),
-          Some(instruction.inputs[2].1 as usize)
-        ),
-        OperationType::Input => (
-          Some(input),
-          Some(instruction.inputs[0].1 as usize)
-        ),
-        OperationType::Output => (
-          Some(get_input(0)),
-          None
-        ),
-        OperationType::JumpIfTrue => {
-          if get_input(0) != 0 { pointer = get_input(1) as usize; }
-          (None, None)
-        },
-        OperationType::JumpIfFalse => {
-          if get_input(0) == 0 { pointer = get_input(1) as usize; }
-          (None, None)
+      let mut jump = |condition, i| {
+        if condition {
+          pointer = get_input(i) as usize;
         }
-        OperationType::LessThan => (
-          Some(if get_input(0) < get_input(1) { 1 } else { 0 }),
-          Some(instruction.inputs[2].1 as usize)
-        ),
-        OperationType::Equals => (
-          Some(if get_input(0) == get_input(1) { 1 } else { 0 }),
-          Some(instruction.inputs[2].1 as usize)
-        ),
+
+        (None, None)
+      };
+
+      let (target_value, output_index) = match instruction.operation {
+        OperationType::Add => (Some(get_input(0) + get_input(1)), Some(2)),
+        OperationType::Multiply => (Some(get_input(0) * get_input(1)), Some(2)),
+        OperationType::Input => (Some(input), Some(0)),
+        OperationType::Output => (Some(get_input(0)), None),
+        OperationType::LessThan => (Some((get_input(0) < get_input(1)) as i32), Some(2)),
+        OperationType::Equals => (Some((get_input(0) == get_input(1)) as i32), Some(2)),
+        OperationType::JumpIfTrue => jump(get_input(0) != 0, 1),
+        OperationType::JumpIfFalse => jump(get_input(0) == 0, 1),
         OperationType::Halt => break
-      }
+      };
+
+      (target_value, output_index.map(|i| instruction.inputs[i].1 as usize))
     };
 
     if let Some(target_value) = target_value {
