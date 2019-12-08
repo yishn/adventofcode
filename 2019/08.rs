@@ -4,6 +4,32 @@ use std::collections::HashMap;
 
 type Layer = HashMap<(usize, usize), u8>;
 
+struct LayerIter<T: Iterator<Item = u8>> {
+  pixels: T,
+  width: usize,
+  height: usize
+}
+
+impl<T: Iterator<Item = u8>> Iterator for LayerIter<T> {
+  type Item = Layer;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let mut layer = Layer::new();
+
+    for y in 0..self.height {
+      for x in 0..self.width {
+        if let Some(pixel) = self.pixels.next() {
+          layer.insert((x, y), pixel);
+        } else {
+          return None;
+        }
+      }
+    }
+
+    Some(layer)
+  }
+}
+
 fn get_input() -> std::io::Result<String> {
   let mut file = File::open("08.txt")?;
   let mut contents = String::new();
@@ -12,46 +38,29 @@ fn get_input() -> std::io::Result<String> {
   Ok(contents)
 }
 
-fn parse_layers(input: &str, width: usize, height: usize) -> Vec<Layer> {
-  let mut layers = vec![];
-  let mut digits = input.chars()
+fn parse_layers(input: &str, width: usize, height: usize) -> LayerIter<impl Iterator<Item = u8> + '_> {
+  let pixels = input.chars()
     .filter(|c| c.is_ascii_digit())
     .filter_map(|c| c.to_digit(10).map(|d| d as u8));
 
-  loop {
-    let mut layer = Layer::new();
-
-    for y in 0..height {
-      for x in 0..width {
-        if let Some(d) = digits.next() {
-          layer.insert((x, y), d);
-        } else {
-          return layers;
-        }
-      }
-    }
-
-    layers.push(layer);
+  LayerIter {
+    pixels,
+    width,
+    height
   }
 }
 
-fn merge_layers(layers: &Vec<Layer>, width: usize, height: usize) -> Layer {
-  let mut result = Layer::new();
-
-  for y in 0..height {
-    for x in 0..width {
-      result.insert(
-        (x, y),
-        layers.iter()
-        .filter_map(|layer| layer.get(&(x, y)).cloned())
-        .filter(|&pixel| pixel != 2)
-        .next()
-        .unwrap_or(2)
-      );
+fn merge_layers<T: Iterator<Item = Layer>>(layers: T) -> Layer {
+  layers
+  .fold(Layer::new(), |mut merged_layer, layer| {
+    for (&position, &pixel) in layer.iter() {
+      if !merged_layer.contains_key(&position) && pixel != 2 {
+        merged_layer.insert(position, pixel);
+      }
     }
-  }
 
-  result
+    merged_layer
+  })
 }
 
 fn render(layer: Layer, width: usize, height: usize) -> String {
@@ -77,9 +86,8 @@ fn main() {
   let input = get_input().unwrap();
   let width = 25;
   let height = 6;
-  let layers = parse_layers(&input, width, height);
 
-  let (_, ones, twos) = layers.iter()
+  let (_, ones, twos) = parse_layers(&input, width, height)
     .map(|layer| {
       layer.iter()
       .filter_map(|(_, &pixel)| match pixel {
@@ -100,7 +108,7 @@ fn main() {
 
   println!("Part 1: {}", ones * twos);
 
-  let merged_layer = merge_layers(&layers, width, height);
+  let merged_layer = merge_layers(parse_layers(&input, width, height));
 
   println!("Part 2:\n{}", render(merged_layer, width, height));
 }
