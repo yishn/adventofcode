@@ -82,7 +82,12 @@ fn run_program(program: &mut Vec<i64>, input: i64) -> Vec<i64> {
     }
   }
 
-  fn get_input_index(program: &mut Vec<i64>, instruction: &Instruction, relative_base: usize, index: usize) -> usize {
+  fn get_instruction_input_index(
+    program: &mut Vec<i64>,
+    instruction: &Instruction,
+    relative_base: usize,
+    index: usize
+  ) -> usize {
     match instruction.inputs[index] {
       (ParameterMode::Relative, d) => {
         let j = (relative_base as i64 + d) as usize;
@@ -96,19 +101,28 @@ fn run_program(program: &mut Vec<i64>, input: i64) -> Vec<i64> {
     }
   }
 
+  fn get_instruction_input(
+    program: &mut Vec<i64>,
+    instruction: &Instruction,
+    relative_base: usize,
+    index: usize
+  ) -> i64 {
+    match instruction.inputs[index] {
+      (ParameterMode::Immediate, value) => value,
+      _ => {
+        let j = get_instruction_input_index(program, instruction, relative_base, index);
+        program[j]
+      }
+    }
+  }
+
   while pointer < program.len() {
     let init_pointer = pointer;
     let instruction = parse_instruction(&program[pointer..]);
 
     let (target_value, target_index) = {
       let mut get_input = |i| {
-        match instruction.inputs[i] {
-          (ParameterMode::Immediate, value) => value,
-          _ => {
-            let j = get_input_index(program, &instruction, relative_base, i);
-            program[j]
-          }
-        }
+        get_instruction_input(program, &instruction, relative_base, i)
       };
 
       let (target_value, output_index) = match instruction.operation {
@@ -142,7 +156,7 @@ fn run_program(program: &mut Vec<i64>, input: i64) -> Vec<i64> {
       (
         target_value,
         output_index.map(|i| {
-          get_input_index(program, &instruction, relative_base, i)
+          get_instruction_input_index(program, &instruction, relative_base, i)
         })
       )
     };
