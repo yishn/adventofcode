@@ -73,16 +73,10 @@ fn get_obstacle_in_sight(obstacles: &HashSet<Point>, distance: i32, p: Point, an
   None
 }
 
-fn has_direct_sight_line(obstacles: &HashSet<Point>, p1: Point, p2: Point) -> bool {
+fn has_direct_sight_line(obstacles: &HashSet<Point>, distance: i32, p1: Point, p2: Point) -> bool {
   let angle = get_discrete_angle(p1, p2);
-  let max_distance = 2 * obstacles.iter()
-    .map(|&(x, y)| {
-      [x.abs(), y.abs()].into_iter().max().cloned().unwrap()
-    })
-    .max()
-    .unwrap_or(0);
 
-  get_obstacle_in_sight(obstacles, max_distance, p1, angle)
+  get_obstacle_in_sight(obstacles, distance, p1, angle)
   .map(|obstacle| obstacle == p2)
   .unwrap_or(false)
 }
@@ -110,10 +104,17 @@ fn main() {
   let input = get_input().unwrap();
   let mut asteroid_positions = parse_asteroid_positions(&input);
 
+  let max_distance = 2 * asteroid_positions.iter()
+    .map(|&(x, y)| {
+      [x.abs(), y.abs()].into_iter().max().cloned().unwrap()
+    })
+    .max()
+    .unwrap_or(0);
+
   let (best_station, score) = asteroid_positions.iter()
     .map(|station| {
       let count = asteroid_positions.iter()
-        .filter(|&&asteroid| has_direct_sight_line(&asteroid_positions, *station, asteroid))
+        .filter(|&&asteroid| has_direct_sight_line(&asteroid_positions, max_distance, *station, asteroid))
         .count();
 
       (*station, count)
