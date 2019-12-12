@@ -1,12 +1,19 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::fmt;
 
 type Vector3 = (i32, i32, i32);
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone)]
 struct MoonState {
   position: Vector3,
   velocity: Vector3
+}
+
+impl fmt::Debug for MoonState {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{:?} - {:?}", self.position, self.velocity)
+  }
 }
 
 impl MoonState {
@@ -59,14 +66,59 @@ fn norm((x, y, z): Vector3) -> i32 {
   x.abs() + y.abs() + z.abs()
 }
 
-fn simulate_tick(moons: &mut Vec<MoonState>) {
-  // Apply gravity
+fn gcd(a: i64, b: i64) -> i64 {
+  let (mut a, mut b) = (a, b);
+  let mut h;
 
-  fn calc_acceleration(x: i32, y: i32) -> i32 {
+  if a == 0 {
+    return b.abs();
+  } else if b == 0 {
+    return a.abs();
+  }
+
+  loop {
+    h = a % b;
+    a = b;
+    b = h;
+
+    if b == 0 {
+      break a.abs();
+    }
+  }
+}
+
+fn lcm(a: i64, b: i64) -> i64 {
+  if a == 0 && b == 0 {
+    0
+  } else {
+    a.abs() / gcd(a, b) * b.abs()
+  }
+}
+
+fn multiple_lcm(numbers: &[i64]) -> Option<i64> {
+  numbers.iter()
+  .fold(None, |acc, &x| match acc {
+    None => Some(x),
+    Some(acc) => Some(lcm(acc, x))
+  })
+}
+
+fn calc_acceleration(pos1: Vector3, pos2: Vector3) -> Vector3 {
+  fn get_sign(x: i32, y: i32) -> i32 {
     if x < y { 1 }
     else if x > y { -1 }
     else { 0 }
   }
+
+  (
+    get_sign(pos1.0, pos2.0),
+    get_sign(pos1.1, pos2.1),
+    get_sign(pos1.2, pos2.2)
+  )
+}
+
+fn simulate_tick(moons: &mut Vec<MoonState>) {
+  // Apply gravity
 
   let n = moons.len();
   let pairs = (0..n)
@@ -79,12 +131,7 @@ fn simulate_tick(moons: &mut Vec<MoonState>) {
   for (i, j) in pairs {
     let moon1 = &moons[i];
     let moon2 = &moons[j];
-
-    let acceleration = (
-      calc_acceleration(moon1.position.0, moon2.position.0),
-      calc_acceleration(moon1.position.1, moon2.position.1),
-      calc_acceleration(moon1.position.2, moon2.position.2)
-    );
+    let acceleration = calc_acceleration(moon1.position, moon2.position);
 
     let moon1 = &mut moons[i];
 
@@ -105,7 +152,7 @@ fn simulate_tick(moons: &mut Vec<MoonState>) {
 
   // Apply velocity
 
-  for moon in moons {
+  for moon in moons.iter_mut() {
     moon.position = (
       moon.position.0 + moon.velocity.0,
       moon.position.1 + moon.velocity.1,
@@ -128,4 +175,46 @@ fn main() {
     .sum::<i32>();
 
   println!("Part 1: {}", total_energy);
+
+  let mut moons = initial_moons.clone();
+  let (mut xf, mut yf, mut zf) = (false, false, false);
+  let (mut xp, mut yp, mut zp) = (0, 0, 0);
+
+  fn count_var<F, T>(
+    counter: &mut i64,
+    finished: &mut bool,
+    moons: &Vec<MoonState>,
+    compare: &Vec<MoonState>,
+    predicate: F
+  )
+  where
+    T: PartialEq,
+    F: Fn(&MoonState) -> T
+  {
+    if !*finished {
+      *counter += 1;
+
+      let component_equals = moons.iter().map(&predicate)
+        .zip(compare.iter().map(&predicate))
+        .all(|(x, y)| x == y);
+
+      if component_equals {
+        *finished = true;
+      }
+    }
+  }
+
+  loop {
+    simulate_tick(&mut moons);
+
+    count_var(&mut xp, &mut xf, &moons, &initial_moons, |moon| [moon.position.0, moon.velocity.0]);
+    count_var(&mut yp, &mut yf, &moons, &initial_moons, |moon| [moon.position.1, moon.velocity.1]);
+    count_var(&mut zp, &mut zf, &moons, &initial_moons, |moon| [moon.position.2, moon.velocity.2]);
+
+    if xf && yf && zf {
+      break;
+    }
+  }
+
+  println!("Part 2: {}", multiple_lcm(&[xp, yp, zp]).unwrap());
 }
