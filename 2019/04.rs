@@ -36,9 +36,9 @@ fn get_digits(n: u32) -> Vec<u8> {
   result
 }
 
-fn is_monotone<T: PartialOrd>(vec: &Vec<T>) -> bool {
-  vec.iter().enumerate()
-  .all(|(i, d)| i == 0 || &vec[i - 1] <= d)
+fn is_monotone<T: PartialOrd>(list: &[T]) -> bool {
+  list.iter().enumerate()
+  .all(|(i, d)| i == 0 || &list[i - 1] <= d)
 }
 
 fn is_valid(password: u32) -> bool {
