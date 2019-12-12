@@ -134,7 +134,7 @@ fn simulate_tick(moons: &mut Vec<MoonState>) {
       (0..n)
       .map(move |y| (x, y))
     })
-    .filter(|&(x, y)| x < y);
+    .filter(|&(x, y)| x != y);
 
   for (i, j) in pairs {
     let moon1 = &moons[i];
@@ -147,14 +147,6 @@ fn simulate_tick(moons: &mut Vec<MoonState>) {
       moon1.velocity.0 + acceleration.0,
       moon1.velocity.1 + acceleration.1,
       moon1.velocity.2 + acceleration.2
-    );
-
-    let moon2 = &mut moons[j];
-
-    moon2.velocity = (
-      moon2.velocity.0 - acceleration.0,
-      moon2.velocity.1 - acceleration.1,
-      moon2.velocity.2 - acceleration.2
     );
   }
 
