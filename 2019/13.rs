@@ -278,7 +278,7 @@ fn render_screen(screen: &TileGrid) -> String {
   result
 }
 
-fn play_game(state: (&mut Vec<i64>, &mut usize, &mut usize), print: bool) -> i64 {
+fn play_game(program: &mut Vec<i64>, print: bool) -> i64 {
   fn get_tile_position(screen: &TileGrid, tile: Tile) -> (i64, i64) {
     screen.iter()
     .find(|&(_, &t)| t == tile)
@@ -286,11 +286,14 @@ fn play_game(state: (&mut Vec<i64>, &mut usize, &mut usize), print: bool) -> i64
     .unwrap()
   }
 
-  let (mut screen, mut score, _) = output_screen((state.0, state.1, state.2), None);
-  let mut joystick = 0;
+  let (mut s1, mut s2) = (0, 0);
+  let (mut screen, mut score, _) = output_screen((program, &mut s1, &mut s2), None);
 
   loop {
-    let (screen_update, score_update, halted) = output_screen((state.0, state.1, state.2), Some(joystick));
+    let paddle_position = get_tile_position(&screen, Tile::HorizontalPaddle);
+    let ball_position = get_tile_position(&screen, Tile::Ball);
+    let joystick = (ball_position.0 - paddle_position.0).signum();
+    let (screen_update, score_update, halted) = output_screen((program, &mut s1, &mut s2), Some(joystick));
 
     for (&(x, y), &tile) in screen_update.iter() {
       screen.insert((x, y), tile);
@@ -300,20 +303,9 @@ fn play_game(state: (&mut Vec<i64>, &mut usize, &mut usize), print: bool) -> i64
       score = score_update;
     }
 
-    let paddle_position = get_tile_position(&screen, Tile::HorizontalPaddle);
-    let ball_position = get_tile_position(&screen, Tile::Ball);
-
-    if ball_position.0 == paddle_position.0 {
-      joystick = 0;
-    } else if ball_position.0 < paddle_position.0 {
-      joystick = -1;
-    } else {
-      joystick = 1;
-    }
-
     if print {
       println!("// Score: {}\n{}\n", score.unwrap_or(0), render_screen(&screen));
-      thread::sleep(time::Duration::from_millis(20));
+      thread::sleep(time::Duration::from_millis(50));
     }
 
     if halted {
@@ -344,7 +336,7 @@ fn main() {
   program[0] = 2;
 
   let print_game = env::args().any(|s| s == "--print");
-  let score = play_game((&mut program, &mut 0, &mut 0), print_game);
+  let score = play_game(&mut program, print_game);
 
   println!("Part 2: {}", score);
 }
