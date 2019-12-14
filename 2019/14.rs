@@ -89,6 +89,27 @@ fn main() {
   let input = get_input().unwrap();
   let recipes = parse_input(&input);
 
-  let ore = get_base_ingredient_amount(&recipes, "FUEL", 1, &mut Recipe::new());
-  println!("Part 1: {}", ore);
+  let one_fuel_ore = get_base_ingredient_amount(&recipes, "FUEL", 1, &mut Recipe::new());
+  println!("Part 1: {}", one_fuel_ore);
+
+  let max_ore = 1000000000000u64;
+  let mut max_fuel_approx = max_ore / one_fuel_ore;
+  let mut cooldown = false;
+
+  loop {
+    let ore = get_base_ingredient_amount(&recipes, "FUEL", max_fuel_approx, &mut Recipe::new());
+
+    if ore < max_ore {
+      if cooldown {
+        break;
+      }
+
+      max_fuel_approx += (max_ore - ore) / one_fuel_ore + 1;
+    } else {
+      cooldown = true;
+      max_fuel_approx -= 1;
+    }
+  }
+
+  println!("Part 2: {}", max_fuel_approx);
 }
