@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::{io, io::prelude::*};
 use std::hash::Hash;
-use std::fmt::Debug;
 use std::collections::HashMap;
 
 type Recipe<T> = HashMap<T, u64>;
@@ -37,23 +36,30 @@ fn parse_input(input: &str) -> RecipeBook<&str> {
     _ => None
   })
   .map(|(ingredients, outcome)| (ingredients.filter_map(parse_ingredient), parse_ingredient(outcome)))
-  .filter_map(|(ingredients, outcome)| outcome.and_then(|outcome| {
+  .filter_map(|(ingredients, outcome)| outcome.and_then(|(product, amount)| {
     let ingredients = ingredients.collect::<Recipe<_>>();
 
     if ingredients.len() == 0 {
       return None;
     }
 
-    Some((outcome.0, (ingredients, outcome.1)))
+    Some((product, (ingredients, amount)))
   }))
   .collect()
 }
 
-fn get_base_ingredient_amount<T>(recipes: &RecipeBook<T>, ingredient: T, amount: u64, residues: &mut Recipe<T>) -> u64
-where T: Eq + Clone + Copy + Debug + Hash {
+fn get_base_ingredient_amount<'a, T>(
+  recipes: &'a RecipeBook<T>,
+  ingredient: &'a T,
+  amount: u64,
+  residues: &mut HashMap<&'a T, u64>
+) -> u64
+where
+  T: Eq + Hash
+{
   let mut amount = amount;
 
-  if let Some(residue) = residues.get_mut(&ingredient) {
+  if let Some(residue) = residues.get_mut(ingredient) {
     if *residue >= amount {
       *residue -= amount;
       amount = 0;
@@ -72,12 +78,12 @@ where T: Eq + Clone + Copy + Debug + Hash {
     Some((subrecipe, yield_amount)) => {
       let times = (amount as f64 / *yield_amount as f64).ceil() as u64;
       let result = subrecipe.iter()
-        .map(|(&ingredient, &amount)| {
+        .map(|(ingredient, &amount)| {
           get_base_ingredient_amount(recipes, ingredient, amount * times, residues)
         })
         .sum();
 
-      let new_residue = residues.get(&ingredient).cloned().unwrap_or(0) + *yield_amount * times - amount;
+      let new_residue = residues.get(ingredient).cloned().unwrap_or(0) + *yield_amount * times - amount;
       residues.insert(ingredient, new_residue);
 
       result
@@ -88,8 +94,9 @@ where T: Eq + Clone + Copy + Debug + Hash {
 fn main() {
   let input = get_input().unwrap();
   let recipes = parse_input(&input);
+  let get_ore_for_fuel = |n| get_base_ingredient_amount(&recipes, &"FUEL", n, &mut HashMap::new());
 
-  let one_fuel_ore = get_base_ingredient_amount(&recipes, "FUEL", 1, &mut Recipe::new());
+  let one_fuel_ore = get_ore_for_fuel(1);
   println!("Part 1: {}", one_fuel_ore);
 
   let max_ore = 1000000000000u64;
@@ -97,7 +104,7 @@ fn main() {
   let mut cooldown = false;
 
   loop {
-    let ore = get_base_ingredient_amount(&recipes, "FUEL", max_fuel_approx, &mut Recipe::new());
+    let ore = get_ore_for_fuel(max_fuel_approx);
 
     if ore < max_ore {
       if cooldown {
