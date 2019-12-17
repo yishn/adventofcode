@@ -192,14 +192,26 @@ pub fn run_program(state: &mut ProgramState, input: Option<i64>) -> ProgramResul
   ProgramResult::Halt
 }
 
-pub fn run_program_with_inputs<I>(state: &mut ProgramState, inputs: I) -> ProgramResult
+pub fn run_program_with_inputs<I>(state: &mut ProgramState, inputs: I) -> Vec<i64>
 where I: Iterator<Item = i64> {
   let mut inputs = inputs;
-  let mut result = run_program(state, inputs.next());
+  let mut outputs = vec![];
+  let mut result = run_program(state, None);
 
-  for input in inputs {
-    result = run_program(state, Some(input));
+  loop {
+    if let ProgramResult::Output(x) = result {
+      outputs.push(x);
+    }
+
+    result = run_program(state, match result {
+      ProgramResult::WaitForInput => inputs.next(),
+      _ => None
+    });
+
+    if let ProgramResult::Halt = result {
+      break;
+    }
   }
 
-  result
+  outputs
 }
