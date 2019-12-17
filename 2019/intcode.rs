@@ -192,7 +192,7 @@ pub fn run_program(state: &mut ProgramState, input: Option<i64>) -> ProgramResul
   ProgramResult::Halt
 }
 
-pub fn run_program_with_inputs<I>(state: &mut ProgramState, inputs: I) -> Vec<i64>
+pub fn run_program_with_inputs<I>(state: &mut ProgramState, inputs: I) -> (Vec<i64>, ProgramResult)
 where I: Iterator<Item = i64> {
   let mut inputs = inputs;
   let mut outputs = vec![];
@@ -204,7 +204,10 @@ where I: Iterator<Item = i64> {
     }
 
     result = run_program(state, match result {
-      ProgramResult::WaitForInput => inputs.next(),
+      ProgramResult::WaitForInput => match inputs.next() {
+        Some(x) => Some(x),
+        None => break
+      },
       _ => None
     });
 
@@ -213,5 +216,5 @@ where I: Iterator<Item = i64> {
     }
   }
 
-  outputs
+  (outputs, result)
 }

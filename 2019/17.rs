@@ -274,9 +274,9 @@ fn main() {
       .chain(iter::once('\n'))
     }))
     .chain(vec!['n', '\n'])
-    .map(|x| x as u8 as i64);
+    .map(|x| x as i64);
 
-  let outputs = run_program_with_inputs(&mut ProgramState::new(program), inputs);
+  let (outputs, _) = run_program_with_inputs(&mut ProgramState::new(program), inputs);
 
   println!("Part 2: {}", outputs.last().unwrap());
 }
