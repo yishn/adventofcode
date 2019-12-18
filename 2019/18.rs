@@ -4,15 +4,54 @@ use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
 #[derive(Debug, Copy, Clone)]
-enum Tile<T> {
+enum Tile<K> {
   Wall,
   Passage,
-  Door(T),
-  Key(T)
+  Door(K),
+  Key(K)
 }
 
 type Position = (usize, usize);
-type Labyrinth<T> = HashMap<Position, Tile<T>>;
+type Labyrinth<K> = HashMap<Position, Tile<K>>;
+
+trait HasNeighbors<K> {
+  fn neighbors(&self, labyrinth: &Labyrinth<K>, keys: &[K]) -> Vec<Self> where Self: Sized;
+}
+
+impl<K> HasNeighbors<K> for Position
+where K: Hash + Eq {
+  fn neighbors(&self, labyrinth: &Labyrinth<K>, keys: &[K]) -> Vec<Position> {
+    let &(x, y) = self;
+
+    [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
+    .cloned()
+    .filter(|&(x, y)| x > 0 && y > 0)
+    .filter(|pos| match labyrinth.get(pos) {
+      Some(Tile::Passage) | Some(Tile::Key(_)) => true,
+      Some(Tile::Door(x)) => keys.contains(x),
+      _ => false
+    })
+    .collect()
+  }
+}
+
+impl<K> HasNeighbors<K> for Vec<Position>
+where K: Hash + Eq + Clone {
+  fn neighbors(&self, labyrinth: &Labyrinth<K>, keys: &[K]) -> Vec<Vec<Position>> {
+    self.iter()
+    .cloned()
+    .enumerate()
+    .flat_map(|(i, position)| {
+      position.neighbors(labyrinth, keys).into_iter()
+      .map(move |neighbor| {
+        let mut positions = self.iter().cloned().collect::<Vec<_>>();
+        positions[i] = neighbor;
+        positions
+      })
+    })
+    .collect()
+  }
+}
 
 fn get_input() -> std::io::Result<String> {
   let mut file = File::open("18.txt")?;
@@ -52,19 +91,8 @@ fn parse_labyrinth(input: &str) -> (Labyrinth<char>, Option<Position>) {
   (labyrinth, entrance)
 }
 
-fn get_neighbors<T: Hash + Eq>(labyrinth: &Labyrinth<T>, (x, y): Position, keys: &Vec<T>) -> Vec<Position> {
-  [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
-  .cloned()
-  .filter(|&(x, y)| x > 0 && y > 0)
-  .filter(|pos| match labyrinth.get(pos) {
-    Some(Tile::Passage) | Some(Tile::Key(_)) => true,
-    Some(Tile::Door(x)) => keys.contains(x),
-    _ => false
-  })
-  .collect()
-}
-
-fn get_all_keys(labyrinth: &Labyrinth<char>, position: Position, key_count: usize) -> Vec<Position> {
+fn get_all_keys<K>(labyrinth: &Labyrinth<K>, position: Position, key_count: usize) -> Option<Vec<Position>>
+where K: Hash + Eq + Clone + Ord {
   let mut queue = VecDeque::new();
   let mut previous_map = HashMap::new();
   let mut target = None;
@@ -78,11 +106,11 @@ fn get_all_keys(labyrinth: &Labyrinth<char>, position: Position, key_count: usiz
       break;
     }
 
-    for neighbor in get_neighbors(labyrinth, position, &keys) {
+    for neighbor in position.neighbors(labyrinth, &keys) {
       let mut new_keys = keys.clone();
 
-      if let Some(&Tile::Key(c)) = labyrinth.get(&neighbor) {
-        new_keys.push(c);
+      if let Some(Tile::Key(c)) = labyrinth.get(&neighbor) {
+        new_keys.push(c.clone());
         new_keys.sort();
         new_keys.dedup();
       }
@@ -96,20 +124,30 @@ fn get_all_keys(labyrinth: &Labyrinth<char>, position: Position, key_count: usiz
     }
   }
 
-  let mut result = vec![target.unwrap()];
+  target.map(|target| {
+    let mut result = vec![target];
 
-  while let Some(Some(prev)) = previous_map.get(&result.last().unwrap()) {
-    result.push(prev.clone());
-  }
+    while let Some(Some(prev)) = previous_map.get(&result.last().unwrap()) {
+      result.push(prev.clone());
+    }
 
-  result.into_iter().rev().map(|(position, _)| position).collect()
+    result.into_iter().rev().map(|(position, _)| position).collect()
+  })
 }
 
 fn main() {
   let input = get_input().unwrap();
-  let (labyrinth, position) = parse_labyrinth(&input);
+  let (mut labyrinth, position) = parse_labyrinth(&input);
 
   let path = get_all_keys(&labyrinth, position.unwrap(), 26);
+  println!("Part 1: {}", path.unwrap().len() - 1);
 
-  println!("Part 1: {}", path.len() - 1);
+  let (x, y) = position.unwrap();
+  labyrinth.insert((x, y), Tile::Wall);
+  labyrinth.insert((x - 1, y), Tile::Wall);
+  labyrinth.insert((x + 1, y), Tile::Wall);
+  labyrinth.insert((x, y - 1), Tile::Wall);
+  labyrinth.insert((x, y + 1), Tile::Wall);
+
+  let positions = vec![(x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1), (x + 1, y + 1)];
 }
