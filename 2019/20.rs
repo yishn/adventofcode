@@ -143,40 +143,13 @@ fn parse_labyrinth(input: &str) -> Labyrinth<Position, String> {
               label.push(c1);
               label.push(c2);
 
-              let portal_type = match i {
-                0 => {
-                  // Left
-                  if x < width / 2 {
-                    PortalType::Outer
-                  } else {
-                    PortalType::Inner
-                  }
-                },
-                1 => {
-                  // Right
-                  if x < width / 2 {
-                    PortalType::Inner
-                  } else {
-                    PortalType::Outer
-                  }
-                },
-                2 => {
-                  // Top
-                  if y < height / 2 {
-                    PortalType::Outer
-                  } else {
-                    PortalType::Inner
-                  }
-                },
-                3 => {
-                  // Bottom
-                  if y < height / 2 {
-                    PortalType::Inner
-                  } else {
-                    PortalType::Outer
-                  }
-                },
-                _ => panic!()
+              let portal_type = match [
+                (x, width, PortalType::Outer, PortalType::Inner),  // Left
+                (x, width, PortalType::Inner, PortalType::Outer),  // Right
+                (y, height, PortalType::Outer, PortalType::Inner), // Top
+                (y, height, PortalType::Inner, PortalType::Outer)  // Bottom
+              ][i] {
+                (a, b, x, y) => if a < b / 2 { x } else { y }
               };
 
               (Some(portal_type), Some(label))
