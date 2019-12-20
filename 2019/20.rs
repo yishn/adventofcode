@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::hash::Hash;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
+
+mod graph;
+use graph::Graph;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum PortalType {
@@ -26,30 +29,25 @@ struct Labyrinth<N: Hash + Eq, P: Hash + Eq> {
   goal: Option<N>,
 }
 
-trait HasNeighbors<N: Hash + Eq, P: Hash + Eq> {
-  fn neighbors(&self, labyrinth: &Labyrinth<N, P>) -> Vec<Self> where Self: Sized;
-}
-
-impl<P: Hash + Eq + Clone> HasNeighbors<Position, P> for Position {
-  fn neighbors(&self, labyrinth: &Labyrinth<Position, P>) -> Vec<Self> {
-    let &(x, y) = self;
-    let portal = match labyrinth.tiles.get(self) {
+impl<P: Hash + Eq + Clone> Graph<Position> for Labyrinth<Position, P> {
+  fn get_neighbors(&self, (x, y): Position) -> Vec<Position> {
+    let portal = match self.tiles.get(&(x, y)) {
       Some(Tile::Portal(p, _)) => Some(p.clone()),
       _ => None
     };
 
     let mut result = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
       .filter(|&(x, y)| x > 0 && y > 0)
-      .filter(|pos| match labyrinth.tiles.get(pos) {
+      .filter(|pos| match self.tiles.get(pos) {
         Some(Tile::Passage) | Some(Tile::Portal(_, _)) => true,
         _ => false
       })
       .collect::<Vec<_>>();
 
     if let Some(p) = portal {
-      let (pos1, pos2) = labyrinth.portals.get(&p).cloned().unwrap();
+      let (pos1, pos2) = self.portals.get(&p).cloned().unwrap();
 
-      if pos1 == *self {
+      if pos1 == (x, y) {
         result.push(pos2);
       } else {
         result.push(pos1);
@@ -60,17 +58,16 @@ impl<P: Hash + Eq + Clone> HasNeighbors<Position, P> for Position {
   }
 }
 
-impl<P: Hash + Eq + Clone> HasNeighbors<Position, P> for (Position, usize) {
-  fn neighbors(&self, labyrinth: &Labyrinth<Position, P>) -> Vec<Self> {
-    let &((x, y), level) = self;
-    let (portal, portal_type) = match labyrinth.tiles.get(&(x, y)) {
+impl<P: Hash + Eq + Clone> Graph<(Position, usize)> for Labyrinth<Position, P> {
+  fn get_neighbors(&self, ((x, y), level): (Position, usize)) -> Vec<(Position, usize)> {
+    let (portal, portal_type) = match self.tiles.get(&(x, y)) {
       Some(Tile::Portal(p, t)) => (Some(p.clone()), Some(t.clone())),
       _ => (None, None)
     };
 
     let mut result = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
       .filter(|&(x, y)| x > 0 && y > 0)
-      .filter(|pos| match labyrinth.tiles.get(pos) {
+      .filter(|pos| match self.tiles.get(pos) {
         Some(Tile::Passage) | Some(Tile::Portal(_, _)) => true,
         _ => false
       })
@@ -79,7 +76,7 @@ impl<P: Hash + Eq + Clone> HasNeighbors<Position, P> for (Position, usize) {
 
     if let (Some(p), Some(portal_type)) = (portal, portal_type) {
       if level > 0 && portal_type == PortalType::Outer || portal_type == PortalType::Inner {
-        let (pos1, pos2) = labyrinth.portals.get(&p).cloned().unwrap();
+        let (pos1, pos2) = self.portals.get(&p).cloned().unwrap();
 
         result.push((
           if pos1 == (x, y) { pos2 } else { pos1 },
@@ -234,60 +231,15 @@ fn parse_labyrinth(input: &str) -> Labyrinth<Position, String> {
   }
 }
 
-fn shortest_path<P, T>(
-  labyrinth: &Labyrinth<Position, P>,
-  start: T,
-  target: T
-) -> Option<Vec<T>>
-where
-  P: Hash + Eq + Clone,
-  T: Hash + Eq + Copy + HasNeighbors<Position, P>
-{
-  let mut queue = VecDeque::new();
-  let mut previous_map = HashMap::new();
-
-  queue.push_back(start);
-  previous_map.insert(start, None);
-
-  while let Some(position) = queue.pop_front() {
-    if position == target {
-      break;
-    }
-
-    for neighbor in position.neighbors(labyrinth) {
-      if previous_map.contains_key(&neighbor) {
-        continue;
-      }
-
-      queue.push_back(neighbor);
-      previous_map.insert(neighbor, Some(position));
-    }
-  }
-
-  let mut path = vec![target];
-
-  while let Some(&Some(previous)) = previous_map.get(path.last().unwrap()) {
-    path.push(previous);
-  }
-
-  path.reverse();
-
-  if path[0] == start {
-    Some(path)
-  } else {
-    None
-  }
-}
-
 fn main() {
   let input = get_input().unwrap();
   let labyrinth = parse_labyrinth(&input);
   let entrance = labyrinth.entrance.unwrap();
   let goal = labyrinth.goal.unwrap();
 
-  let path = shortest_path(&labyrinth, entrance, goal).unwrap();
+  let path = labyrinth.bfs(entrance).construct_path(goal).unwrap();
   println!("Part 1: {}", path.len() - 1);
 
-  let path = shortest_path(&labyrinth, (entrance, 0), (goal, 0)).unwrap();
+  let path = labyrinth.bfs((entrance, 0)).construct_path((goal, 0)).unwrap();
   println!("Part 2: {}", path.len() - 1);
 }
