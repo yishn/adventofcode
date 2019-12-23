@@ -60,7 +60,7 @@ fn parse_instruction(numbers: &[i64]) -> Instruction {
     8 => (OperationType::Equals, 3),
     9 => (OperationType::SetRelativeBase, 1),
     99 => (OperationType::Halt, 0),
-    _ => panic!()
+    _ => panic!("Unsupported operation code {}", instruction_code)
   };
 
   let get_parameter_mode = |i| {
