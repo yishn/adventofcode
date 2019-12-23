@@ -16,7 +16,7 @@ fn get_input() -> std::io::Result<String> {
   Ok(contents)
 }
 
-fn parse_instructions(input: &str) -> impl Iterator<Item = ShuffleOperation> + Clone + '_ {
+fn parse_instructions(input: &str) -> Vec<ShuffleOperation> {
   input.lines()
   .filter_map(|line| {
     if line == "deal into new stack" {
@@ -31,22 +31,26 @@ fn parse_instructions(input: &str) -> impl Iterator<Item = ShuffleOperation> + C
       None
     }
   })
+  .collect()
 }
 
-fn multiplicative_inverse(modulo: usize, n: usize) -> usize {
+fn extended_gcd(a: isize, b: isize) -> (isize, isize, isize) {
+  let mut r = (a, b);
+  let mut s = (1, 0);
   let mut t = (0, 1);
-  let mut r = (modulo as isize, n as isize);
 
   while r.1 != 0 {
-    let (old_t, new_t) = t;
     let (old_r, new_r) = r;
+    let (old_s, new_s) = s;
+    let (old_t, new_t) = t;
     let quotient = old_r / new_r;
 
-    t = (new_t, old_t - quotient * new_t);
+    s = (new_s, old_s - quotient * new_s);
     r = (new_r, old_r - quotient * new_r);
+    t = (new_t, old_t - quotient * new_t);
   }
 
-  if t.0 < 0 { modulo - ((-t.0) as usize) } else { t.0 as usize }
+  (s.0, t.0, r.0)
 }
 
 fn mod_multiply(a: usize, b: usize, m: usize) -> usize {
@@ -96,7 +100,8 @@ fn invert_instructions(count: usize, instructions: &[ShuffleOperation]) -> Vec<S
     ShuffleOperation::DealIntoNewStack => ShuffleOperation::DealIntoNewStack,
     ShuffleOperation::CutNCards(n) => ShuffleOperation::CutNCards(-n),
     ShuffleOperation::DealWithIncrement(n) => {
-      let inverse_n = multiplicative_inverse(count, n);
+      let (_, inverse_n, _) = extended_gcd(count as isize, n as isize);
+      let inverse_n = if inverse_n < 0 { count - (-inverse_n as usize) } else { inverse_n as usize };
       ShuffleOperation::DealWithIncrement(inverse_n)
     }
   })
@@ -106,7 +111,7 @@ fn invert_instructions(count: usize, instructions: &[ShuffleOperation]) -> Vec<S
 fn main() {
   let input = get_input().unwrap();
 
-  let instructions = parse_instructions(&input).collect::<Vec<_>>();
+  let instructions = parse_instructions(&input);
   let count = 10007;
   let shuffle_parameters = calculate_shuffle_parameters(count, instructions.iter().cloned());
   let position = track_card_position(shuffle_parameters, 2019, count);
