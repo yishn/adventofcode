@@ -100,10 +100,9 @@ impl Iterator for Network {
       }
 
       self.idle[id] = !has_incoming_package && !has_outgoing_package;
-      self.event_queue.push_back(NetworkEvent::OnTick);
     }
 
-    self.event_queue.pop_front()
+    Some(self.event_queue.pop_front().unwrap_or(NetworkEvent::OnTick))
   }
 }
 
