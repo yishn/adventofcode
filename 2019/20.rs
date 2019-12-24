@@ -37,7 +37,7 @@ impl<P: Hash + Eq + Clone> Graph<Position> for Labyrinth<Position, P> {
     };
 
     let mut result = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
-      .filter(|&(x, y)| x > 0 && y > 0)
+      .filter(|&(x, y)| x >= 0 && y >= 0)
       .filter(|pos| match self.tiles.get(pos) {
         Some(Tile::Passage) | Some(Tile::Portal(_, _)) => true,
         _ => false
@@ -66,7 +66,7 @@ impl<P: Hash + Eq + Clone> Graph<(Position, usize)> for Labyrinth<Position, P> {
     };
 
     let mut result = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
-      .filter(|&(x, y)| x > 0 && y > 0)
+      .filter(|&(x, y)| x >= 0 && y >= 0)
       .filter(|pos| match self.tiles.get(pos) {
         Some(Tile::Passage) | Some(Tile::Portal(_, _)) => true,
         _ => false
