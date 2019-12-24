@@ -123,12 +123,12 @@ fn main() {
 
   let mut print_part1 = true;
   let mut nat = None;
-  let network = Network::new(&program, 50);
+  let mut last_nat = None;
+  let mut network = Network::new(&program, 50);
 
-  for event in network {
+  while let Some(event) = network.next() {
     match event {
       NetworkEvent::OnPackage(package) => {
-        println!("{:?}", package);
         if package.to == 255 {
           if print_part1 {
             println!("Part 1: {}", package.y);
@@ -138,7 +138,28 @@ fn main() {
           nat = Some((package.x, package.y));
         }
       },
-      NetworkEvent::OnTick => {}
+      NetworkEvent::OnTick => {
+        if network.idle.iter().all(|&x| x) {
+          if let Some((x, y)) = nat {
+            match last_nat {
+              Some((_, last_y)) if last_y == y => {
+                println!("Part 2: {}", y);
+                return;
+              },
+              _ => {}
+            }
+
+            network.queues[0].push_back(NetworkPackage {
+              from: 255,
+              to: 0,
+              x, y
+            });
+
+            last_nat = nat;
+            nat = None;
+          }
+        }
+      }
     }
   }
 }
