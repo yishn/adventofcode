@@ -2,7 +2,9 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::fmt::Debug;
+
+mod graph;
+use graph::Graph;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Tile {
@@ -13,26 +15,19 @@ enum Tile {
 type Position = (usize, usize);
 type RecursivePosition = (i64, Position);
 
-trait HasNeighbors<P> {
-  fn get_neighbors(&self, position: P) -> Vec<P>;
-}
+struct TileMap<P>(HashMap<P, Tile>);
 
-#[derive(Debug)]
-struct TileMap<P: Hash + Eq + Copy + Debug>(HashMap<P, Tile>);
-
-impl<P: Hash + Eq + Copy + Debug> TileMap<P> {
+impl<P: Hash + Eq + Copy> TileMap<P> {
   fn new() -> TileMap<P> {
     TileMap(HashMap::new())
   }
 
-  fn tick(&self) -> TileMap<P> where Self: HasNeighbors<P> {
+  fn tick(&self) -> TileMap<P> where Self: Graph<P> {
     let mut result = TileMap::new();
 
     let considered_positions = self.0.iter()
       .flat_map(|(&pos, _)| self.get_neighbors(pos))
       .filter(|pos| !self.0.contains_key(&pos))
-      .collect::<HashSet<_>>()
-      .into_iter()
       .chain(self.0.keys().cloned());
 
     for position in considered_positions {
@@ -113,7 +108,7 @@ impl TileMap<Position> {
   }
 }
 
-impl HasNeighbors<Position> for TileMap<Position> {
+impl Graph<Position> for TileMap<Position> {
   fn get_neighbors(&self, (x, y): Position) -> Vec<Position> {
     if !self.0.contains_key(&(x, y)) {
       return vec![];
@@ -140,7 +135,7 @@ impl TileMap<RecursivePosition> {
   }
 }
 
-impl HasNeighbors<RecursivePosition> for TileMap<RecursivePosition> {
+impl Graph<RecursivePosition> for TileMap<RecursivePosition> {
   fn get_neighbors(&self, position: RecursivePosition) -> Vec<RecursivePosition> {
     let (level, (x, y)) = position;
     let (x, y) = (x as isize, y as isize);
