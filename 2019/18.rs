@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::rc::Rc;
+use std::fmt::Debug;
 
 mod graph;
 use graph::Graph;
@@ -17,6 +18,7 @@ enum Tile<K> {
 
 type Position = (usize, usize);
 type PositionKeys<K> = (Position, Rc<Vec<K>>);
+type PositionsKeys<K> = (Vec<Position>, Rc<Vec<K>>);
 type Labyrinth<K> = HashMap<Position, Tile<K>>;
 
 impl<K: Hash + Eq + Clone + Ord> Graph<PositionKeys<K>> for Labyrinth<K> {
@@ -43,6 +45,25 @@ impl<K: Hash + Eq + Clone + Ord> Graph<PositionKeys<K>> for Labyrinth<K> {
         }))
       },
       _ => None
+    })
+    .collect()
+  }
+}
+
+impl<K: Hash + Eq + Clone + Ord> Graph<PositionsKeys<K>> for Labyrinth<K> {
+  fn get_neighbors(&self, (positions, keys): PositionsKeys<K>) -> Vec<PositionsKeys<K>> {
+    positions.iter().cloned()
+    .map(|position| (position, keys.clone()))
+    .enumerate()
+    .flat_map(|(i, position_keys)| {
+      self.get_neighbors(position_keys).into_iter()
+      .map(move |x| (i, x))
+      .map(|(i, (position, keys))| {
+        let mut positions = positions.clone();
+        positions[i] = position;
+
+        (positions, keys)
+      })
     })
     .collect()
   }
@@ -102,6 +123,27 @@ where K: Hash + Eq + Clone + Ord {
   })
 }
 
+fn real_get_all_keys<K>(labyrinth: &Labyrinth<K>, positions: Vec<Position>, key_count: usize) -> Option<Vec<Vec<Position>>>
+where K: Hash + Eq + Clone + Ord + Debug {
+  let mut bfs_iter = labyrinth.bfs((positions, Rc::new(vec![])));
+
+  bfs_iter
+  .find(|(_, keys)| {
+    if keys.len() > 5 {
+      println!("{:?}", keys);
+    }
+    keys.len() == key_count
+  })
+  .and_then(|target| {
+    bfs_iter.construct_path(target)
+    .map(|path| {
+      path.into_iter()
+      .map(|(positions, _)| positions)
+      .collect()
+    })
+  })
+}
+
 fn main() {
   let input = get_input().unwrap();
   let (mut labyrinth, position) = parse_labyrinth(&input);
@@ -117,4 +159,7 @@ fn main() {
   labyrinth.insert((x, y + 1), Tile::Wall);
 
   let positions = vec![(x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1), (x + 1, y + 1)];
+  let path = real_get_all_keys(&labyrinth, positions, 26);
+
+  println!("Part 2: {}", path.unwrap().len() - 1);
 }
