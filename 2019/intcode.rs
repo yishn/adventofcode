@@ -144,8 +144,8 @@ pub fn run_program(state: &mut ProgramState, input: Option<i64>) -> ProgramResul
           _ => return ProgramResult::WaitForInput
         },
         OperationType::Output => (Some(get_input(0)), None),
-        OperationType::LessThan => (Some(if get_input(0) < get_input(1) { 1 } else { 0 }), Some(2)),
-        OperationType::Equals => (Some(if get_input(0) == get_input(1) { 1 } else { 0 }), Some(2)),
+        OperationType::LessThan => (Some((get_input(0) < get_input(1)) as i64), Some(2)),
+        OperationType::Equals => (Some((get_input(0) == get_input(1)) as i64), Some(2)),
         OperationType::JumpIfTrue => {
           if get_input(0) != 0 {
             *pointer = get_input(1) as usize;
