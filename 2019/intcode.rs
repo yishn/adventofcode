@@ -144,8 +144,8 @@ pub fn run_program(state: &mut ProgramState, input: Option<i64>) -> ProgramResul
           _ => return ProgramResult::WaitForInput
         },
         OperationType::Output => (Some(get_input(0)), None),
-        OperationType::LessThan => (Some((get_input(0) < get_input(1)) as i64), Some(2)),
-        OperationType::Equals => (Some((get_input(0) == get_input(1)) as i64), Some(2)),
+        OperationType::LessThan => (Some(if get_input(0) < get_input(1) { 1 } else { 0 }), Some(2)),
+        OperationType::Equals => (Some(if get_input(0) == get_input(1) { 1 } else { 0 }), Some(2)),
         OperationType::JumpIfTrue => {
           if get_input(0) != 0 {
             *pointer = get_input(1) as usize;
@@ -217,4 +217,17 @@ where I: Iterator<Item = i64> {
   }
 
   (outputs, result)
+}
+
+pub fn run_ascii_program_with_input(state: &mut ProgramState, input: &str) -> (String, ProgramResult) {
+  let inputs = input.chars().map(|c| c as i64);
+  let (outputs, result) = run_program_with_inputs(state, inputs);
+  let output = outputs.into_iter()
+    .map(|x| x as u8 as char)
+    .fold(String::new(), |mut acc, x| {
+      acc.push(x);
+      acc
+    });
+
+  (output, result)
 }
