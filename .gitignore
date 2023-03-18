@@ -3,6 +3,5 @@
 *.rlib
 
 Cargo.lock
-Cargo.toml
 target
 *.rs.bk
