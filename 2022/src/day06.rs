@@ -2,13 +2,13 @@ use std::collections::{HashSet, VecDeque};
 
 static INPUT: &'static str = include_str!("./day06.txt");
 
-struct ChunkIterator<I: Iterator> {
+struct WindowIterator<I: Iterator> {
   n: usize,
   iter: I,
   buffer: VecDeque<I::Item>,
 }
 
-impl<I: Iterator> ChunkIterator<I> {
+impl<I: Iterator> WindowIterator<I> {
   pub fn new(n: usize, iter: I) -> Self {
     Self {
       n,
@@ -18,7 +18,7 @@ impl<I: Iterator> ChunkIterator<I> {
   }
 }
 
-impl<I> Iterator for ChunkIterator<I>
+impl<I> Iterator for WindowIterator<I>
 where
   I: Iterator,
   I::Item: Clone,
@@ -47,12 +47,12 @@ where
 fn part1() {
   let chars = INPUT.chars();
   let n = 4;
-  let mut chunks = ChunkIterator::new(n, chars);
+  let mut windows = WindowIterator::new(n, chars);
 
   println!(
     "{}",
-    chunks
-      .position(|chunk| chunk.into_iter().collect::<HashSet<_>>().len() == n)
+    windows
+      .position(|window| window.into_iter().collect::<HashSet<_>>().len() == n)
       .map(|i| i + n)
       .unwrap()
   );
@@ -62,12 +62,12 @@ fn part1() {
 fn part2() {
   let chars = INPUT.chars();
   let n = 14;
-  let mut chunks = ChunkIterator::new(n, chars);
+  let mut windows = WindowIterator::new(n, chars);
 
   println!(
     "{}",
-    chunks
-      .position(|chunk| chunk.into_iter().collect::<HashSet<_>>().len() == n)
+    windows
+      .position(|window| window.into_iter().collect::<HashSet<_>>().len() == n)
       .map(|i| i + n)
       .unwrap()
   );
